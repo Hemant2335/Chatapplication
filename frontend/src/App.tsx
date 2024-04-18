@@ -1,6 +1,9 @@
 import { useEffect , useState } from 'react'
 import { useSocket } from './hooks/useSocket'
-import './App.css'
+import Homepage from './pages/Homepage'
+import Signup from './pages/Signup'
+import { BrowserRouter , Route, Routes } from 'react-router-dom'
+
 
 function App() {
 
@@ -20,7 +23,12 @@ function App() {
 
   return (
     <>
-      {(message === null) ? (<h1>Loading...</h1>) : (<h1>{message}</h1>)}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Homepage/>} />
+          <Route path="/Signup" element={<Signup/>} />
+        </Routes>
+      </BrowserRouter>
     </>
   )
 }
