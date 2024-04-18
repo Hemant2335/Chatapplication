@@ -36,6 +36,7 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         const token = jsonwebtoken_1.default.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
         res.json({ Status: true, token: token });
+        res.cookie("token", token);
     }
     catch (error) {
         console.log(error);
@@ -43,17 +44,27 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 }));
 router.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { email, username, name, password, profile } = req.body;
+    const { email, username, name, password } = req.body;
     // Check if email already exists
     const user = yield prisma.user.findUnique({
         where: {
             email: req.body.email,
         },
     });
+    const user2 = yield prisma.user.findUnique({
+        where: {
+            username: req.body.username,
+        },
+    });
     if (user) {
         return res
             .status(400)
             .json({ Status: false, error: "User already exists" });
+    }
+    if (user2) {
+        return res
+            .status(400)
+            .json({ Status: false, error: "Username already Taken" });
     }
     // Encrypt password
     const hashedpassword = yield bcrypt_1.default.hash(password, 10);
@@ -63,7 +74,6 @@ router.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, functio
             data: {
                 email: email,
                 password: hashedpassword,
-                profile: profile,
                 name: name,
                 username: username,
             },

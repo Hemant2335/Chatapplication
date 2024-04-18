@@ -39,11 +39,21 @@ router.post("/register", async (req, res) => {
       email: req.body.email,
     },
   });
+  const user2 = await prisma.user.findUnique({
+    where: {
+      username: req.body.username,
+    },
+  });
   if (user) {
     return res
       .status(400)
       .json({ Status: false, error: "User already exists" });
   }
+    if (user2) {
+        return res
+        .status(400)
+        .json({ Status: false, error: "Username already Taken" });
+    }
   // Encrypt password
   const hashedpassword = await bcrypt.hash(password, 10);
   // Create user

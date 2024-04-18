@@ -1,5 +1,6 @@
 import { useState } from "react";
 import banner from "../assets/banner.jpg";
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const [Name, setName] = useState<string | null>(null);
@@ -8,6 +9,33 @@ const Signup = () => {
   const [Password, setPassword] = useState<string | null>(null);
   const [Terms, setTerms] = useState<boolean>(false);
   const [Warning, setWarning] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleSignup = async () => {
+    if(!Name || !Username || !Email || !Password || !Terms){
+        setWarning("Please fill all the fields and accept the terms");
+        return;
+    }
+    const res = await fetch("http://localhost:3000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: Name,
+          username: Username,
+          email: Email,
+          password: Password,
+        }),
+    })
+    const data = await res.json();
+    if(data.Status === false){
+        setWarning(data.error);
+        return;
+    }
+    navigate("/");
+  }
+
 
   return (
     <div className="flex">
@@ -102,6 +130,7 @@ const Signup = () => {
             </div>
             <button
               className="bg-[#EA4B8B] w-fit py-2 px-[2vw] text-white rounded-lg"
+              onClick={()=>handleSignup()}
             >
               Create Account
             </button>
