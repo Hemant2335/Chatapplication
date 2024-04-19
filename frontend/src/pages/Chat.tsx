@@ -6,6 +6,7 @@ import { useSocket } from "../hooks/useSocket";
 import { messagestate } from "../store/atoms/Chat";
 import { chatstate } from "../store/atoms/Chat";
 import SideMsgBar from "../components/SideMsgBar";
+import ChatScreen from "../components/ChatScreen";
 
 const Chat = () => {
   const [user, setuser] = useRecoilState(userState);
@@ -49,7 +50,7 @@ const Chat = () => {
     } catch (error) {
       return console.log(error);
     }
-  }
+  };
 
   const fetchChat = async () => {
     try {
@@ -71,9 +72,7 @@ const Chat = () => {
     } catch (error) {
       return console.log(error);
     }
-  }
-
-
+  };
 
   const fetchUser = async () => {
     try {
@@ -103,13 +102,12 @@ const Chat = () => {
     fetchChat();
   }, []);
 
-
-
-
-
-  return <div>
-    <SideMsgBar/>
-  </div>;
+  return (
+    <div className="w-full h-screen flex">
+      <SideMsgBar />
+      <ChatScreen />
+    </div>
+  );
 };
 
 export default Chat;
