@@ -1,36 +1,40 @@
-import { useEffect , useState } from 'react'
-import { useSocket } from './hooks/useSocket'
-import Homepage from './pages/Homepage'
-import Signup from './pages/Signup'
-import { BrowserRouter , Route, Routes } from 'react-router-dom'
-
+import { useEffect, useState } from "react";
+import { useSocket } from "./hooks/useSocket";
+import Homepage from "./pages/Homepage";
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import Chat from "./pages/Chat";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { CookiesProvider } from "react-cookie";
 
 function App() {
+  const [message, setmessage] = useState<string | null>(null);
+  const { socket, connect, disconnect } = useSocket("ws://localhost:8080");
 
-  const [message, setmessage] = useState<string | null>(null)
-  const {socket, connect, disconnect} = useSocket('ws://localhost:8080');
-
-  useEffect(()=>{
-    connect()
+  useEffect(() => {
+    connect();
     socket.onmessage = (event) => {
-      setmessage(event.data)
-    }
+      setmessage(event.data);
+    };
     return () => {
-      disconnect()
-    }
-  },[])
-
+      disconnect();
+    };
+  }, []);
 
   return (
     <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Homepage/>} />
-          <Route path="/Signup" element={<Signup/>} />
-        </Routes>
-      </BrowserRouter>
+      <CookiesProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+            <Route path="/Signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/Chat" element={<Chat />} />
+          </Routes>
+        </BrowserRouter>
+      </CookiesProvider>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

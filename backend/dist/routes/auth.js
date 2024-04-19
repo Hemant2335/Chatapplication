@@ -35,8 +35,8 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(400).json({ Status: false, error: "Invalid Password" });
         }
         const token = jsonwebtoken_1.default.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+        console.log("Successfully set cookie");
         res.json({ Status: true, token: token });
-        res.cookie("token", token);
     }
     catch (error) {
         console.log(error);

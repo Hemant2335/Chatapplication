@@ -22,8 +22,9 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ Status: false, error: "Invalid Password" });
     }
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+    console.log("Successfully set cookie");
     res.json({ Status: true, token: token });
-    res.cookie("token", token);
+    
   } catch (error) {
     console.log(error);
     res.status(400).json({ Status: false, error: "Internal Server Error" });
@@ -72,6 +73,7 @@ router.post("/register", async (req, res) => {
       process.env.JWT_SECRET || "secret"
     );
     res.json({ Status: true, token: token });
+    
   } catch (error) {
     console.log(error);
     res.status(400).json({ Status: false, error: "Internal Server Error" });

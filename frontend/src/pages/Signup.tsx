@@ -1,6 +1,7 @@
 import { useState } from "react";
 import banner from "../assets/banner.jpg";
 import { useNavigate } from "react-router-dom";
+import { useCookies } from "react-cookie";
 
 const Signup = () => {
   const [Name, setName] = useState<string | null>(null);
@@ -9,6 +10,7 @@ const Signup = () => {
   const [Password, setPassword] = useState<string | null>(null);
   const [Terms, setTerms] = useState<boolean>(false);
   const [Warning, setWarning] = useState<string | null>(null);
+  const [cookies, setCookie] = useCookies(["token"]);
   const navigate = useNavigate();
 
   const handleSignup = async () => {
@@ -33,6 +35,7 @@ const Signup = () => {
         setWarning(data.error);
         return;
     }
+    setCookie("token", data.token);
     navigate("/");
   }
 
@@ -49,7 +52,7 @@ const Signup = () => {
       <div className="md:w-[60vw] w-full justify-center flex-col flex h-full">
         <div>
           <span className=" gap-2 text-sm font-medium p-4 text-left flex float-end">
-            Already a member ? <a className="text-blue-400">Sign in</a>
+            Already a member ? <a className="text-blue-400 cursor-pointer" onClick={()=>navigate("/login")}>Sign in</a>
           </span>
         </div>
 
