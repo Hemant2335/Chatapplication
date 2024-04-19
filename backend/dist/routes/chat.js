@@ -18,7 +18,8 @@ const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const authentication_1 = __importDefault(require("../middlewares/authentication"));
 router.post("/sendmessage", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { fromid, toid, message } = req.body;
+    const { toid, message } = req.body;
+    const fromid = req.body.user.id;
     try {
         // Check if Chat already Exists
         const chat = yield prisma.chat.findFirst({
@@ -65,6 +66,50 @@ router.post("/sendmessage", authentication_1.default, (req, res) => __awaiter(vo
             });
         }
         return res.json({ Status: true, message: "Message Saved Successfully" });
+    }
+    catch (error) {
+        console.log(error);
+        return res.json({ Status: false, error: "Internal Server Error" });
+    }
+}));
+router.get("/getmessages", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body.user;
+    try {
+        const messages = yield prisma.messages.findMany({
+            where: {
+                OR: [
+                    {
+                        fromUser: id
+                    },
+                    {
+                        toUser: id
+                    }
+                ]
+            }
+        });
+        return res.json({ Status: true, messages: messages });
+    }
+    catch (error) {
+        console.log(error);
+        return res.json({ Status: false, error: "Internal Server Error" });
+    }
+}));
+router.get("/getchats", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.body.user;
+    try {
+        const chats = yield prisma.chat.findMany({
+            where: {
+                OR: [
+                    {
+                        userID: id
+                    },
+                    {
+                        touserID: id
+                    }
+                ]
+            }
+        });
+        return res.json({ Status: true, chats: chats });
     }
     catch (error) {
         console.log(error);

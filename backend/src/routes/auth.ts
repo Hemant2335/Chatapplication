@@ -86,6 +86,7 @@ router.post("/register", async (req, res) => {
 
 router.get("/getuser", authentication ,async (req, res) => {
   try {
+
     const user = await prisma.user.findUnique({
       where: {
         id: (req as any).body.user.id,
@@ -106,5 +107,30 @@ router.get("/getuser", authentication ,async (req, res) => {
   }
   
 });
+
+
+router.post("/getotheruser" , authentication , async (req, res) => {
+    const {userid} = req.body;
+    try {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: userid,
+        },
+        select: {
+          name : true,
+          email : false,
+          username : true,
+          password : false,
+          id : false,
+          profile : true
+        }
+      });
+      res.json({Status : true , user : user});
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({ Status: false, error: "Internal Server Error" });
+    }
+})
+
 
 module.exports = router;
