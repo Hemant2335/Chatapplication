@@ -12,13 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authentication = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 require("dotenv").config();
 const authentication = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const token = req.cookies.token;
     if (!token) {
-        return res.status(401).json({ Status: false, error: "Unauthorized" });
+        return res.status(401).json({ Status: false, error: "No Token Provided" });
     }
     try {
         const user = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "secret");
@@ -30,4 +29,4 @@ const authentication = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         return res.status(401).json({ Status: false, error: "Unauthorized" });
     }
 });
-exports.authentication = authentication;
+exports.default = authentication;

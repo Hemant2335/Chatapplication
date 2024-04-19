@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Chat from "./pages/Chat";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CookiesProvider } from "react-cookie";
+import { RecoilRoot } from "recoil";
 
 function App() {
   const [message, setmessage] = useState<string | null>(null);
@@ -24,14 +25,16 @@ function App() {
   return (
     <>
       <CookiesProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/Signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/Chat" element={<Chat />} />
-          </Routes>
-        </BrowserRouter>
+        <RecoilRoot>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/Signup" element={<Signup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/Chat" element={<Chat />} />
+            </Routes>
+          </BrowserRouter>
+        </RecoilRoot>
       </CookiesProvider>
     </>
   );

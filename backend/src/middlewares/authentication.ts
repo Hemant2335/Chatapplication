@@ -1,11 +1,11 @@
-import { Request  , Response} from "express"
+import { NextFunction, Request  , Response} from "express"
 import jwt from "jsonwebtoken"
 require("dotenv").config();
 
-export const authentication = async(req : Request , res : Response , next : ()=>{}) =>{
+const authentication = async(req : Request , res : Response , next : NextFunction) =>{
     const token = req.cookies.token;
     if(!token){
-        return res.status(401).json({Status : false , error : "Unauthorized"})
+        return res.status(401).json({Status : false , error : "No Token Provided"})
     }
     try{
         const user = jwt.verify(token , process.env.JWT_SECRET || "secret");
@@ -16,3 +16,6 @@ export const authentication = async(req : Request , res : Response , next : ()=>
         return res.status(401).json({Status : false , error : "Unauthorized"})
     }
 }
+
+
+export default authentication;

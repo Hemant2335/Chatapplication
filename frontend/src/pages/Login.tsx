@@ -1,14 +1,11 @@
 import { useState } from "react";
 import banner from "../assets/banner.jpg";
 import { useNavigate } from "react-router-dom";
-import { useCookies } from "react-cookie";
 
 const Login = () => {
   const [Email, setEmail] = useState<string | null>(null);
   const [Password, setPassword] = useState<string | null>(null);
-  const [Terms, setTerms] = useState<boolean>(false);
   const [Warning, setWarning] = useState<string | null>(null);
-  const [cookies, setCookie] = useCookies(["token"]);
   const navigate = useNavigate();
   const handlelogin = async () => {
     try {
@@ -21,6 +18,7 @@ const Login = () => {
           email: Email,
           password: Password,
         }),
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -32,7 +30,6 @@ const Login = () => {
         setWarning(data.error);
         return;
       }
-      setCookie("token", data.token);
       navigate("/");
     } catch (error) {
       return setWarning("Internal Server Error");

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import banner from "../assets/banner.jpg";
 import { useNavigate } from "react-router-dom";
-import { useCookies } from "react-cookie";
 
 const Signup = () => {
   const [Name, setName] = useState<string | null>(null);
@@ -10,7 +9,6 @@ const Signup = () => {
   const [Password, setPassword] = useState<string | null>(null);
   const [Terms, setTerms] = useState<boolean>(false);
   const [Warning, setWarning] = useState<string | null>(null);
-  const [cookies, setCookie] = useCookies(["token"]);
   const navigate = useNavigate();
 
   const handleSignup = async () => {
@@ -18,7 +16,8 @@ const Signup = () => {
         setWarning("Please fill all the fields and accept the terms");
         return;
     }
-    const res = await fetch("http://localhost:3000/api/auth/register", {
+    try {
+      const res = await fetch("http://localhost:3000/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,8 +34,11 @@ const Signup = () => {
         setWarning(data.error);
         return;
     }
-    setCookie("token", data.token);
     navigate("/");
+    } catch (error) {
+        return setWarning("Internal Server Error");
+    }
+    
   }
 
 
