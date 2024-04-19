@@ -20,7 +20,19 @@ model User {
   name     String
   password String
   profile  String   @default("https://res.cloudinary.com/dri5u2nqb/image/upload/v1713511395/zrtp9p7eote4ixokmwjx.jpg")
+  Chats    Chat[]
+  }
+
+model Chat {
+  id        String @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  touserID  String
+  userID    String
+  user      User @relation(fields: [userID], references: [id])
+  messages  Messages[]
 }
+
 
 model Messages {
   id        String @id @default(cuid())
@@ -28,6 +40,8 @@ model Messages {
   createdAt DateTime @default(now())
   fromUser  String
   toUser    String 
+  ChatId    String
+  chat      Chat @relation(fields: [ChatId], references: [id])
 }
 
 model GroupMessages {

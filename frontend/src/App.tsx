@@ -9,18 +9,7 @@ import { CookiesProvider } from "react-cookie";
 import { RecoilRoot } from "recoil";
 
 function App() {
-  const [message, setmessage] = useState<string | null>(null);
-  const { socket, connect, disconnect } = useSocket("ws://localhost:8080");
 
-  useEffect(() => {
-    connect();
-    socket.onmessage = (event) => {
-      setmessage(event.data);
-    };
-    return () => {
-      disconnect();
-    };
-  }, []);
 
   return (
     <>
