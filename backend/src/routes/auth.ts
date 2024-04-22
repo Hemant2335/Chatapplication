@@ -121,7 +121,7 @@ router.post("/getotheruser" , authentication , async (req, res) => {
           email : false,
           username : true,
           password : false,
-          id : false,
+          id : true,
           profile : true
         }
       });

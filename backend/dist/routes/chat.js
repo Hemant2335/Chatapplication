@@ -17,9 +17,23 @@ const router = express_1.default.Router();
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const authentication_1 = __importDefault(require("../middlewares/authentication"));
-router.post("/sendmessage", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { toid, message } = req.body;
-    const fromid = req.body.user.id;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+require("dotenv").config();
+router.post("/sendmessage", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token, toid, message } = req.body;
+    let fromid;
+    if (!token) {
+        return res.status(401).json({ Status: false, error: "No Token Provided" });
+    }
+    try {
+        const user = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "secret");
+        req.body.user = user;
+        fromid = user.id;
+    }
+    catch (error) {
+        console.log(error);
+        return res.status(401).json({ Status: false, error: "Unauthorized" });
+    }
     try {
         // Check if Chat already Exists
         const chat = yield prisma.chat.findFirst({
@@ -79,13 +93,13 @@ router.get("/getmessages", authentication_1.default, (req, res) => __awaiter(voi
             where: {
                 OR: [
                     {
-                        fromUser: id
+                        fromUser: id,
                     },
                     {
-                        toUser: id
-                    }
-                ]
-            }
+                        toUser: id,
+                    },
+                ],
+            },
         });
         return res.json({ Status: true, messages: messages });
     }
@@ -101,13 +115,13 @@ router.get("/getchats", authentication_1.default, (req, res) => __awaiter(void 0
             where: {
                 OR: [
                     {
-                        userID: id
+                        userID: id,
                     },
                     {
-                        touserID: id
-                    }
-                ]
-            }
+                        touserID: id,
+                    },
+                ],
+            },
         });
         return res.json({ Status: true, chats: chats });
     }

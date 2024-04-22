@@ -10,25 +10,13 @@ import ChatScreen from "../components/ChatScreen";
 
 const Chat = () => {
   const [user, setuser] = useRecoilState(userState);
-  const setmsg = useSetRecoilState(messagestate);
+  const [msg, setmsg] = useRecoilState(messagestate);
   const setchat = useSetRecoilState(chatstate);
   const navigate = useNavigate();
   const [message, setmessage] = useState<string | null>(null);
-  const { socket, connect, disconnect } = useSocket(
-    "ws://localhost:8080",
-    user
+  const { socket}  = useSocket(
+    "ws://localhost:8080"
   );
-
-  useEffect(() => {
-    if (!user.id) return;
-    connect();
-    socket.onmessage = (event) => {
-      setmessage(event.data);
-    };
-    return () => {
-      disconnect();
-    };
-  }, [user]);
 
   const fetchMsg = async () => {
     try {
@@ -41,7 +29,6 @@ const Chat = () => {
       });
 
       const data = await res.json();
-      console.log(data);
       if (!data.Status) {
         alert(data.error);
         return navigate("/login");
@@ -63,7 +50,6 @@ const Chat = () => {
       });
 
       const data = await res.json();
-      console.log(data);
       if (!data.Status) {
         alert(data.error);
         return navigate("/login");
@@ -85,7 +71,6 @@ const Chat = () => {
       });
 
       const data = await res.json();
-      console.log(data);
       if (!data.Status) {
         alert(data.error);
         return navigate("/login");
@@ -105,7 +90,8 @@ const Chat = () => {
   return (
     <div className="w-full h-screen flex">
       <SideMsgBar />
-      <ChatScreen />
+      <ChatScreen  Socket={socket}/> 
+      {message}
     </div>
   );
 };

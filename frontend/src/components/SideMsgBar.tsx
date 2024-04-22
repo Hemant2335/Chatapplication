@@ -5,10 +5,11 @@ import { useFetchuser } from "../hooks/useFetchuser";
 import { userState } from "../store/atoms/User";
 import Logo from "../assets/Logo.png";
 import { FiPlus } from "react-icons/fi";
-import { FiAlignCenter, FiSearch } from "react-icons/fi";
+import { FiAlignCenter, FiSettings ,  FiSearch } from "react-icons/fi";
 import SideUserComp from "./SideUserComp";
 
 type User = {
+  id : string;
   username: string;
   name: string;
   profile: string;
@@ -20,10 +21,8 @@ const SideMsgBar = () => {
   const [Users, setUsers] = useState<User[]>([]);
 
   const fetchUsers = async () => {
-    console.log("Running");
     Chat.map(async (item) => {
       const id = item.touserID === user.id ? item.userID : item.touserID;
-      console.log();
       const newuser = await useFetchuser(id);
       newuser.ChatId = item.id;
       const updatedarray = [newuser, ...Users];
@@ -36,7 +35,7 @@ const SideMsgBar = () => {
   }, [Chat]);
 
   return (
-    <div className="w-[25vw] h-screen p-4">
+    <div className="w-[25vw] h-screen p-4 relative">
       <div className="flex items-center justify-between cursor-pointer overflow-hidden  pt-2  text-[3vh] font-bold ">
         <div className="flex items-center ">
           <img
@@ -69,6 +68,25 @@ const SideMsgBar = () => {
         {Users.map((item) => (
           <SideUserComp key={item.username} user={item} />
         ))}
+      </div>
+      <div className="absolute w-full bottom-[2vh] pr-[2vw]">
+      <hr className=" border-1 border-gray-500 " />
+        <div className="flex items-center rounded-lg justify-between  p-3">
+          <div className="flex gap-2 items-center">
+            <img
+              src={user.profile}
+              className="rounded-[50%] max-h-[10vh] md:max-h-[5vh] object-cover"
+              alt="logo"
+            />
+            <div className="">
+              <h1 className="text-[2vh] font-bold">{user.name}</h1>
+              <p className="text-[1.7vh] font-medium text-gray-500">
+                @{user.username}
+              </p>
+            </div>
+          </div>
+          <FiSettings className="text-gray-500"/>
+        </div>
       </div>
     </div>
   );

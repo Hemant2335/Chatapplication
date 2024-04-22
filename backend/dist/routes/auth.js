@@ -124,7 +124,7 @@ router.post("/getotheruser", authentication_1.default, (req, res) => __awaiter(v
                 email: false,
                 username: true,
                 password: false,
-                id: false,
+                id: true,
                 profile: true
             }
         });

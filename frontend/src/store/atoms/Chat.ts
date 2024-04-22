@@ -25,5 +25,9 @@ export const messagestate = atom({
 export const chatstate  = atom({
     key : "chats",
     default : [] as chats[]
+})
 
+export const ChatDetails = atom({
+    key : "chatdetails",
+    default : {} as chats
 })
