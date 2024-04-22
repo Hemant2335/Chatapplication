@@ -130,4 +130,44 @@ router.get("/getchats", authentication_1.default, (req, res) => __awaiter(void 0
         return res.json({ Status: false, error: "Internal Server Error" });
     }
 }));
+router.get("/findchat", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userid } = req.query;
+    const { id } = req.body.user;
+    try {
+        const chat = yield prisma.chat.findFirst({
+            where: {
+                OR: [
+                    {
+                        AND: [
+                            {
+                                userID: id
+                            },
+                            {
+                                touserID: userid
+                            }
+                        ]
+                    },
+                    {
+                        AND: [
+                            {
+                                userID: userid
+                            },
+                            {
+                                touserID: id
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+        if (!chat) {
+            return res.json({ Status: false, error: "Chat Not Found", chat: null });
+        }
+        res.json({ Status: true, chat: chat.id });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(400).json({ Status: false, error: "Internal Server Error" });
+    }
+}));
 module.exports = router;

@@ -135,4 +135,49 @@ router.post("/getotheruser", authentication_1.default, (req, res) => __awaiter(v
         res.status(400).json({ Status: false, error: "Internal Server Error" });
     }
 }));
+router.get("/alluser", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield prisma.user.findMany({
+            select: {
+                name: true,
+                email: false,
+                username: true,
+                password: false,
+                id: true,
+                profile: true
+            }
+        });
+        res.json({ Status: true, users: users });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(400).json({ Status: false, error: "Internal Server Error" });
+    }
+}));
+router.get("/SearchUser", authentication_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { username } = req.query;
+    try {
+        const user = yield prisma.user.findUnique({
+            where: {
+                username: username.toString()
+            },
+            select: {
+                name: true,
+                email: false,
+                username: true,
+                password: false,
+                id: true,
+                profile: true
+            }
+        });
+        if (!user) {
+            return res.json({ Status: false, error: "User Not Found", user: null });
+        }
+        res.json({ Status: true, user: user });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(400).json({ Status: false, error: "Internal Server Error" });
+    }
+}));
 module.exports = router;

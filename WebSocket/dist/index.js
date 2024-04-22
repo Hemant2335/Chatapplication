@@ -52,6 +52,7 @@ wss.on("connection", function connection(ws) {
                         toUser: data.toid,
                         message: data.message,
                     }));
+                    console.log("Message sent to user", data.toid);
                 }
                 else {
                     console.log("User not found or disconnected");

@@ -1,17 +1,21 @@
 import { FiMoreVertical } from "react-icons/fi";
 import {ChatDetails} from "../store/atoms/Chat";
 import { useSetRecoilState } from "recoil";
+import { useNavigate } from "react-router-dom";
 
 const SideUserComp = ({ user }: any) => {
 
   const setChatDetails = useSetRecoilState(ChatDetails);
+  const router = useNavigate();
+
 
   const handleclick = () =>{
     setChatDetails(user);
+    router("/Chat");
   }
 
   return (
-    <div className="flex items-center cursor-pointer rounded-lg justify-between bg-[#2B2D31] p-3" onClick={()=>handleclick()}>
+    <div className="flex items-center cursor-pointer rounded-lg justify-between bg-[#222222] p-3" onClick={()=>handleclick()}>
       <div className="flex gap-2 items-center">
         <img
           src={user.profile}

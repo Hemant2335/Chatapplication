@@ -133,4 +133,55 @@ router.post("/getotheruser" , authentication , async (req, res) => {
 })
 
 
+router.get("/alluser" , authentication , async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        name : true,
+        email : false,
+        username : true,
+        password : false,
+        id : true,
+        profile : true
+      }
+    });
+    res.json({Status : true , users : users});
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+})
+
+
+router.get("/SearchUser" , authentication , async (req, res) => {
+  const {username} = req.query as any;
+  try {
+    const user = await prisma.user.findUnique({
+      where : {
+        username : username.toString()
+      },
+      select: {
+        name : true,
+        email : false,
+        username : true,
+        password : false,
+        id : true,
+        profile : true
+      }
+    });
+    if(!user)
+      {
+        return res.json({Status : false , error : "User Not Found" , user : null});
+      }
+    res.json({Status : true , user : user});
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+})
+
+
+
+
+
 module.exports = router;

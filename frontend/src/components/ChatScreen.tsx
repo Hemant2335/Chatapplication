@@ -1,6 +1,6 @@
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { ChatDetails } from "../store/atoms/Chat";
-import { useRecoilValue } from "recoil";
+import { useRecoilValue ,useRecoilState } from "recoil";
 import { messagestate } from "../store/atoms/Chat";
 import { useEffect, useState } from "react";
 import { userState } from "../store/atoms/User";
@@ -36,9 +36,9 @@ type ChatScreenProps = {
 
 const ChatScreen = ({ Socket }: ChatScreenProps) => {
   const chatdetails: any = useRecoilValue(ChatDetails);
-  const messages = useRecoilValue(messagestate);
+  const [messages , setmessages] = useRecoilState(messagestate);
   const user = useRecoilValue(userState);
-  const [inputmsg, setinputmsg] = useState<String>("");
+  const [inputmsg, setinputmsg] = useState<string>("");
   const [Messages, setMessages] = useState<message[]>([]);
   const [fromMsg, setfromMsg] = useState<chatmessage[]>([]);
   const [toMsg, settoMsg] = useState<chatmessage[]>([]);
@@ -59,25 +59,35 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     );
     setMessages(chatmessages);
   };
-
+  // Seprating the Messages
   const SeprateMsg = () => {
     const frommsg = Messages.filter((item) => item.fromUser === user.id);
     const tomsg = Messages.filter((item) => item.fromUser === chatdetails.id);
     setfromMsg(frommsg);
     settoMsg(tomsg);
   };
-
+  // Sending the Message
   const handleSendMessage = () => {
     console.log("Sending Message");
     console.log(chatdetails);
     SendMsg.message = inputmsg;
     if (SendMsg.toid.length > 0 ) {
       Socket.send(JSON.stringify(SendMsg));
+      setinputmsg("");
+      const data : message = {
+        id: "1",
+        ChatId: SendMsg.Chatid,
+        fromUser: SendMsg.fromid,
+        toUser: SendMsg.toid,
+        message: SendMsg.message,
+        createdAt: new Date(),
+      }
+      setmessages([...messages, data]);
     } else {
       alert("Please Wait");
     }
   };
-
+  // useEffects
   useEffect(() => {
     SeprateMsg();
   }, [Messages]);
@@ -98,9 +108,9 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
 
   return (
     <div className="w-full h-screen py-4 pl-2  pr-4 items-center justify-center ">
-      <div className="bg-[#2B2D31] rounded-md w-full h-full flex flex-col gap-2">
+      <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2">
         <ChatScreenTopBar />
-        <div className="w-full flex overflow-y-scroll no-scrollbar justify-between h-[75vh] bg-[#2B2D31] ">
+        <div className="w-full flex overflow-y-scroll no-scrollbar justify-between h-[75vh] bg-[#222222] ">
           {/* //Sent Messages */}
           <div>
             {fromMsg.map((item: any) => (
@@ -127,6 +137,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
               placeholder="type your message..."
               className=" bg-[#1A1A1A] p-[1.5vh] focus:outline-none text-sm text-gray-300 w-full"
               onChange={(e) => setinputmsg(e.target.value)}
+              value={inputmsg}
             />
           </div>
           <FiSend

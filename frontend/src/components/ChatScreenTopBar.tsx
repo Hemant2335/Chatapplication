@@ -7,7 +7,7 @@ const ChatScreenTopBar = () => {
   const chatdetails:any = useRecoilValue(ChatDetails);
 
   return (
-    <div className="w-full top-[3vh] px-4 bg-[#2B2D31] rounded-lg pt-[2vh]">
+    <div className="w-full top-[3vh] px-4 bg-[#222222] rounded-lg pt-[2vh]">
         <div className="flex items-center rounded-lg justify-between px-2">
           <div className="flex gap-2 items-center">
             <img

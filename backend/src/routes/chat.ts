@@ -117,4 +117,45 @@ router.get("/getchats", authentication, async (req, res) => {
   }
 });
 
+router.get("/findchat" , authentication , async (req, res) => {
+  const {userid} = req.query as any;
+  const {id} = (req as any).body.user;
+  try {
+    const chat = await prisma.chat.findFirst({
+      where : {
+        OR : [
+          {
+            AND : [
+              {
+                userID : id
+              },
+              {
+                touserID : userid
+              }
+            ]
+          },
+          {
+            AND : [
+              {
+                userID : userid
+              },
+              {
+                touserID : id
+              }
+            ]
+          }
+        ]
+      }
+    });
+    if(!chat)
+      {
+        return res.json({Status : false , error : "Chat Not Found" , chat : null});
+      }
+    res.json({Status : true , chat : chat.id});
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+})
+
 module.exports = router;
