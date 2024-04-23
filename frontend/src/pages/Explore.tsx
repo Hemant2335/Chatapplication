@@ -50,11 +50,10 @@ const Explore = () => {
     users?.map((user: any) => {
       Chat.map((item) => {
         const id = item.touserID === user.id;
+        console.log("I am iD: " , id);
         if (id) {
           user.ChatId = item.id;
           console.log(user);
-        }else {
-          user.ChatId = null;
         }
       });
     });

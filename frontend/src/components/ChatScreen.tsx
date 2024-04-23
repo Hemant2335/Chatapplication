@@ -114,7 +114,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           {/* //Sent Messages */}
           <div>
             {fromMsg.map((item: any) => (
-              <div className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2 ml-auto">
+              <div key={item.id} className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2 ml-auto">
                 <p className="text-white">{item.message}</p>
               </div>
             ))}
@@ -123,7 +123,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           {/* Recieved Messages */}
           <div>
             {toMsg.map((item: any) => (
-              <div className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2">
+              <div key={item.id} className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2">
                 <p className="text-white">{item.message}</p>
               </div>
             ))}

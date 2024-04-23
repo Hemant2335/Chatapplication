@@ -23,20 +23,26 @@ const SideMsgBar = () => {
   const [Users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const fetchUsers = async () => {
-    if(Users.length <= 0 && Chat.length > 0)
-    Chat.map(async (item) => {
+    if (Chat.length === 0) return;
+    console.log("fetch Chat" , Chat);
+    const promises = Chat.map(async (item) => {
       const id = item.touserID === user.id ? item.userID : item.touserID;
-      if(id == null) return ;
-      const newuser:User = await useFetchuser(id);
-      if(newuser === null ) return ;
-      console.log(item.id);
-      newuser.ChatId = item.id;
-      console.log("SideUser" , newuser);
-      setUsers((prevMsg) => [...prevMsg, newuser]);
+      if (id == null) return null;
+      return useFetchuser(id);
     });
+    const fetchedUsers = await Promise.all(promises);
+    const filteredUsers = fetchedUsers.filter(user => user !== null);
+    const updatedUsers = filteredUsers.map(user => ({
+      ...user,
+      ChatId: Chat.find(chat => chat.touserID === user.id || chat.userID === user.id)?.id
+    }));
+    console.log(updatedUsers);
+    setUsers(updatedUsers);
   };
+  
 
   useEffect(() => {
+    console.log("Side Chat" , Chat);
     fetchUsers();
   }, [Chat]);
 
@@ -70,7 +76,7 @@ const SideMsgBar = () => {
           width={10}
         />
       </div>
-      <div className="mt-[4vh] flex flex-col gap-3">
+      <div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
         {Users.map((item) => (
           <SideUserComp key={item.username} user={item} />
         ))}

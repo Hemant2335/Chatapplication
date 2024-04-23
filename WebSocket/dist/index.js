@@ -28,7 +28,13 @@ const handleMessages = (data) => __awaiter(void 0, void 0, void 0, function* () 
         toid: data.toid,
         message: data.message,
     });
-    console.log(res.data);
+    const newdata = res.data;
+    console.log(newdata.chatId);
+    const retdata = {
+        Chatid: newdata.chatId,
+        newchat: newdata.newchat,
+    };
+    return retdata;
 });
 wss.on("connection", function connection(ws) {
     ws.on("message", function incoming(message, isBinary) {
@@ -43,21 +49,26 @@ wss.on("connection", function connection(ws) {
                 console.log("User connected with id", data.id);
                 break;
             case "message":
-                handleMessages(data);
-                const newuserSocket = User.get(data.toid);
-                if (newuserSocket) {
-                    newuserSocket.send(JSON.stringify({
-                        ChatId: data.Chatid,
-                        fromUser: data.fromid,
-                        toUser: data.toid,
-                        message: data.message,
-                    }));
-                    console.log("Message sent to user", data.toid);
-                }
-                else {
-                    console.log("User not found or disconnected");
-                    // Optionally handle the case where the user is not found or disconnected
-                }
+                const handleMsg = (data) => __awaiter(this, void 0, void 0, function* () {
+                    const { Chatid, newchat } = yield handleMessages(data);
+                    console.log(Chatid);
+                    const newuserSocket = User.get(data.toid);
+                    if (newuserSocket) {
+                        newuserSocket.send(JSON.stringify({
+                            ChatId: Chatid,
+                            fromUser: data.fromid,
+                            toUser: data.toid,
+                            message: data.message,
+                            newchat: newchat,
+                        }));
+                        console.log("Message sent to user", data.toid);
+                    }
+                    else {
+                        console.log("User not found or disconnected");
+                        // Optionally handle the case where the user is not found or disconnected
+                    }
+                });
+                handleMsg(data);
                 break;
         }
     });

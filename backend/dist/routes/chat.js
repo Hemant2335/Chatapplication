@@ -60,6 +60,7 @@ router.post("/sendmessage", (req, res) => __awaiter(void 0, void 0, void 0, func
                     message: message,
                 },
             });
+            res.json({ Status: true, newchat: false, message: "Message Saved Successfully", chatId: chat.id });
         }
         else {
             //Create Chat
@@ -78,8 +79,8 @@ router.post("/sendmessage", (req, res) => __awaiter(void 0, void 0, void 0, func
                     message: message,
                 },
             });
+            return res.json({ Status: true, newchat: true, message: "Message Saved Successfully", chatId: newChat.id });
         }
-        return res.json({ Status: true, message: "Message Saved Successfully" });
     }
     catch (error) {
         console.log(error);

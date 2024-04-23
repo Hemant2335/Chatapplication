@@ -11,7 +11,7 @@ import ChatScreen from "../components/ChatScreen";
 const Chat = () => {
   const [user, setuser] = useRecoilState(userState);
   const [msg, setmsg] = useRecoilState(messagestate);
-  const setchat = useSetRecoilState(chatstate);
+  const [chat , setchat] = useRecoilState(chatstate);
   const navigate = useNavigate();
   const [message, setmessage] = useState<string | null>(null);
   const { socket}  = useSocket(
@@ -54,7 +54,12 @@ const Chat = () => {
         alert(data.error);
         return navigate("/login");
       }
-      setchat(data.chats);
+      console.log("Fetched new Chats" , data.chats);
+      if(data.chats.length > chat.length)
+        {
+          setchat(data.chats);
+        }
+      
     } catch (error) {
       return console.log(error);
     }
@@ -81,10 +86,15 @@ const Chat = () => {
     }
   };
 
+
+  useEffect(() => {
+    fetchChat();
+  }, [chat]);
+
   useEffect(() => {
     fetchUser();
     fetchMsg();
-    fetchChat();
+    
   }, []);
 
   return (

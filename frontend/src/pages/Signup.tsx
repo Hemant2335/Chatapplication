@@ -34,7 +34,7 @@ const Signup = () => {
         setWarning(data.error);
         return;
     }
-    navigate("/");
+    navigate("/Login");
     } catch (error) {
         return setWarning("Internal Server Error");
     }
