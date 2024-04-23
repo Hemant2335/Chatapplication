@@ -30,6 +30,16 @@ export const useSocket = (url: string) => {
           // Find Chat and Add Message
           console.log("I am new Chat" ,data.newchat);
           if (data.newchat === false) {
+            if(Chat.find((chat) => chat.id === data.ChatId) === undefined) {
+              const newchat = {
+                id: data.ChatId,
+                userID: data.fromUser,
+                touserID: data.toUser,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }
+              setChat((prevChat) => [...prevChat, newchat]);
+            }
             return setMsg((prevMsg) => [...prevMsg, data]);
           } else {
             // IF Chat not found then fetch the Chat

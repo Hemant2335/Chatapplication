@@ -1,6 +1,6 @@
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { ChatDetails } from "../store/atoms/Chat";
-import { useRecoilValue ,useRecoilState } from "recoil";
+import { useRecoilValue, useRecoilState } from "recoil";
 import { messagestate } from "../store/atoms/Chat";
 import { useEffect, useState } from "react";
 import { userState } from "../store/atoms/User";
@@ -36,7 +36,7 @@ type ChatScreenProps = {
 
 const ChatScreen = ({ Socket }: ChatScreenProps) => {
   const chatdetails: any = useRecoilValue(ChatDetails);
-  const [messages , setmessages] = useRecoilState(messagestate);
+  const [messages, setmessages] = useRecoilState(messagestate);
   const user = useRecoilValue(userState);
   const [inputmsg, setinputmsg] = useState<string>("");
   const [Messages, setMessages] = useState<message[]>([]);
@@ -71,17 +71,17 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     console.log("Sending Message");
     console.log(chatdetails);
     SendMsg.message = inputmsg;
-    if (SendMsg.toid.length > 0 ) {
+    if (SendMsg.toid.length > 0) {
       Socket.send(JSON.stringify(SendMsg));
       setinputmsg("");
-      const data : message = {
+      const data: message = {
         id: "1",
         ChatId: SendMsg.Chatid,
         fromUser: SendMsg.fromid,
         toUser: SendMsg.toid,
         message: SendMsg.message,
         createdAt: new Date(),
-      }
+      };
       setmessages([...messages, data]);
     } else {
       alert("Please Wait");
@@ -114,7 +114,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           {/* //Sent Messages */}
           <div>
             {fromMsg.map((item: any) => (
-              <div key={item.id} className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2 ml-auto">
+              <div
+                key={item.id}
+                className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2 ml-auto"
+              >
                 <p className="text-white">{item.message}</p>
               </div>
             ))}
@@ -123,7 +126,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           {/* Recieved Messages */}
           <div>
             {toMsg.map((item: any) => (
-              <div key={item.id} className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2">
+              <div
+                key={item.id}
+                className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2"
+              >
                 <p className="text-white">{item.message}</p>
               </div>
             ))}
