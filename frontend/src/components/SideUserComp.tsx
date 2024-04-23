@@ -8,9 +8,9 @@ const SideUserComp = ({ user }: any) => {
   const setChatDetails = useSetRecoilState(ChatDetails);
   const router = useNavigate();
 
-
   const handleclick = () =>{
     setChatDetails(user);
+    if(!window.location.href.endsWith("/Chat"))
     router("/Chat");
   }
 

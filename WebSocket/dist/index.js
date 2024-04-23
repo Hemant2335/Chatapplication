@@ -53,6 +53,21 @@ wss.on("connection", function connection(ws) {
                     const { Chatid, newchat } = yield handleMessages(data);
                     console.log(Chatid);
                     const newuserSocket = User.get(data.toid);
+                    const newuserSocket1 = User.get(data.fromid);
+                    if (newuserSocket1 && newchat) {
+                        newuserSocket1.send(JSON.stringify({
+                            ChatId: Chatid,
+                            fromUser: data.fromid,
+                            toUser: data.toid,
+                            message: data.message,
+                            newchat: newchat,
+                        }));
+                        console.log("Message sent to user", data.fromid);
+                    }
+                    else {
+                        console.log("User not found or disconnected");
+                        // Optionally handle the case where the user is not found or disconnected
+                    }
                     if (newuserSocket) {
                         newuserSocket.send(JSON.stringify({
                             ChatId: Chatid,

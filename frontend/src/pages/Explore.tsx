@@ -26,7 +26,7 @@ const Explore = () => {
     const data = await res.json();
     const user = data.user;
     Chat.map(async (item) => {
-      const id = item.touserID === user.id;
+      const id = item.touserID === user.id || item.userID === user.id;
       if (id) {
         user.ChatId = item.id;
       }
@@ -49,8 +49,7 @@ const Explore = () => {
     const users = data.users;
     users?.map((user: any) => {
       Chat.map((item) => {
-        const id = item.touserID === user.id;
-        console.log("I am iD: " , id);
+        const id = item.touserID === user.id || item.userID === user.id;
         if (id) {
           user.ChatId = item.id;
           console.log(user);
