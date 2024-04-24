@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken"
 require("dotenv").config();
 
 const authentication = async(req : Request , res : Response , next : NextFunction) =>{
-    const token = req.cookies.token;
+    const token = req.headers.authorization;
+    console.log(token);
     if(!token){
         return res.status(401).json({Status : false , error : "No Token Provided"})
     }
