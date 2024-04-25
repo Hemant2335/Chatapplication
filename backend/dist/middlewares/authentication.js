@@ -15,7 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 require("dotenv").config();
 const authentication = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = req.cookies.token;
+    const token = req.headers.authorization;
+    console.log(token);
     if (!token) {
         return res.status(401).json({ Status: false, error: "No Token Provided" });
     }

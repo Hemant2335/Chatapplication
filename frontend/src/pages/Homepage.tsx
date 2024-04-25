@@ -1,13 +1,11 @@
 import { useEffect } from "react";
-import { useCookies } from "react-cookie";
 import { useNavigate } from "react-router-dom";
 
 const Homepage = () => {
-  const [cookies] = useCookies(["token"]);
   const navigate = useNavigate();
   useEffect(() => {
-    const cookie = cookies.token;
-    if (cookie) {
+    const token = localStorage.getItem("token") ;
+    if (token) {
       navigate("/Chat");
     }
   }, []);
@@ -15,6 +13,7 @@ const Homepage = () => {
   return (
     <div>
       <h1>Homepage</h1>
+      <button onClick={()=>navigate("/login")}> Login</button>
     </div>
   );
 };

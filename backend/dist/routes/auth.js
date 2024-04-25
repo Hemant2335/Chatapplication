@@ -36,8 +36,13 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(400).json({ Status: false, error: "Invalid Password" });
         }
         const token = jsonwebtoken_1.default.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            domain: "vercel.app"
+        });
         console.log("Successfully set cookie");
-        res.cookie("token", token);
         res.json({ Status: true, token: token });
     }
     catch (error) {
@@ -82,7 +87,6 @@ router.post("/register", (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
         console.log(process.env.JWT_SECRET);
         const token = jsonwebtoken_1.default.sign({ id: newuser.id }, process.env.JWT_SECRET || "secret");
-        res.cookie("token", token);
         res.json({ Status: true, token: token });
     }
     catch (error) {
