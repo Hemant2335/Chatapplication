@@ -50,8 +50,16 @@ wss.on("connection", function connection(ws) {
                 break;
             case "message":
                 const handleMsg = (data) => __awaiter(this, void 0, void 0, function* () {
-                    const { Chatid, newchat } = yield handleMessages(data);
-                    console.log(Chatid);
+                    let Chatid = data.Chatid;
+                    let newchat = false;
+                    console.log("J=heyyyy", Chatid);
+                    if (Chatid == undefined) {
+                        console.log("NewChat found");
+                        const res = yield handleMessages(data);
+                        Chatid = res.Chatid;
+                        newchat = res.newchat;
+                    }
+                    console.log("Yaya !", newchat);
                     const newuserSocket = User.get(data.toid);
                     const newuserSocket1 = User.get(data.fromid);
                     if (newuserSocket1 && newchat) {
