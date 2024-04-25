@@ -4,7 +4,7 @@ import { useRecoilValue, useRecoilState } from "recoil";
 import { messagestate } from "../store/atoms/Chat";
 import { useEffect, useState } from "react";
 import { userState } from "../store/atoms/User";
-import { FiPlusCircle, FiSearch, FiSend } from "react-icons/fi";
+import { FiPlusCircle, FiSend } from "react-icons/fi";
 import { useCookies } from "react-cookie";
 
 type message = {
@@ -50,7 +50,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     fromid: "",
     toid: "",
   });
-  const [cookies, setCookie] = useCookies(["token"]);
+  const [cookies] = useCookies(["token"]);
 
   //Finding the Messages of this Chat
   const findChatMessages = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FiSearch, FiSend } from "react-icons/fi";
 import SideUserComp from "../components/SideUserComp";
 import { useRecoilValue } from "recoil";
@@ -14,11 +14,12 @@ const Explore = () => {
     // Fetch Searched User
     if (!inputmsg) return setSearchUser(null);
     const res = await fetch(
-      `http://localhost:3000/api/auth/SearchUser?username=${inputmsg}`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/auth/SearchUser?username=${inputmsg}`,
       {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "authorization": localStorage.getItem("token") || "",
         },
         credentials: "include",
       }
@@ -38,10 +39,11 @@ const Explore = () => {
   const RecommendedUsers = async () => {
     // Fetch Recommended Users
     if(!(Chat.length > 0)) return ;
-    const res = await fetch(`http://localhost:3000/api/auth/alluser`, {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/alluser`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "authorization": localStorage.getItem("token") || "",
       },
       credentials: "include",
     });

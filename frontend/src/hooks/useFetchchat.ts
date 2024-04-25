@@ -3,14 +3,15 @@ import { useSetRecoilState } from "recoil";
 import { useNavigate } from "react-router-dom";
 
 
-export const useFetchchat = async(userid : any) =>{
+export const useFetchchat = async() =>{
     const setchat = useSetRecoilState(chatstate);
     const navigate = useNavigate();
     try {
-        const res = await fetch("http://localhost:3000/api/chat/getchats", {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/getchats`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "authorization": localStorage.getItem("token") || ""
           },
           credentials: "include",
         });
