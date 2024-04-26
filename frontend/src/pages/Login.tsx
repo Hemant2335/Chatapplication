@@ -2,6 +2,7 @@ import { useState } from "react";
 import banner from "../assets/banner.jpg";
 import { useNavigate } from "react-router-dom";
 
+
 const Login = () => {
   const [Email, setEmail] = useState<string | null>(null);
   const [Password, setPassword] = useState<string | null>(null);
@@ -9,17 +10,19 @@ const Login = () => {
   const navigate = useNavigate();
   const handlelogin = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: Email,
-          password: Password,
-        }),
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: Email,
+            password: Password,
+          }),
+        }
+      );
 
       const data = await res.json();
       console.log(data);
@@ -30,8 +33,10 @@ const Login = () => {
         setWarning(data.error);
         return;
       }
+      localStorage.setItem("token", data.token);
       navigate("/");
     } catch (error) {
+      console.log(error);
       return setWarning("Internal Server Error");
     }
   };
