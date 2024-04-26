@@ -2,10 +2,11 @@
 
 export const useFetchuser = async(userid : any) =>{
     try {
-        const res = await fetch("http://localhost:3000/api/auth/getotheruser", {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getotheruser`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "authorization": localStorage.getItem("token") || "",
             },
             body :JSON.stringify({
                 userid : userid

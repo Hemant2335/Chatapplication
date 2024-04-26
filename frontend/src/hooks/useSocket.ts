@@ -1,14 +1,13 @@
 import { useEffect } from "react";
 import { userState } from "../store/atoms/User";
-import { useRecoilValue, useRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { messagestate } from "../store/atoms/Chat";
 import { chatstate } from "../store/atoms/Chat";
-import { create } from "domain";
 
 export const useSocket = (url: string) => {
   const user = useRecoilValue(userState);
-  const [Chat, setChat] = useRecoilState(chatstate);
-  const [msg, setMsg] = useRecoilState(messagestate);
+  const setChat = useSetRecoilState(chatstate);
+  const setMsg = useSetRecoilState(messagestate);
   let socket: WebSocket | null = new WebSocket(url);
 
   useEffect(() => {

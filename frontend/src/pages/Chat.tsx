@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 import { userState } from "../store/atoms/User";
 import { useRecoilState, useSetRecoilState } from "recoil";
 import { useNavigate } from "react-router-dom";
@@ -9,21 +9,21 @@ import SideMsgBar from "../components/SideMsgBar";
 import ChatScreen from "../components/ChatScreen";
 
 const Chat = () => {
-  const [user, setuser] = useRecoilState(userState);
-  const [msg, setmsg] = useRecoilState(messagestate);
+  const setuser = useSetRecoilState(userState);
+  const setmsg = useSetRecoilState(messagestate);
   const [chat , setchat] = useRecoilState(chatstate);
   const navigate = useNavigate();
-  const [message, setmessage] = useState<string | null>(null);
   const { socket}  = useSocket(
     "ws://localhost:8080"
   );
 
   const fetchMsg = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/chat/getmessages", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/getmessages`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "authorization": localStorage.getItem("token") || "",
         },
         credentials: "include",
       });
@@ -41,10 +41,11 @@ const Chat = () => {
 
   const fetchChat = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/chat/getchats", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/getchats`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "authorization": localStorage.getItem("token") || "",
         },
         credentials: "include",
       });
@@ -67,10 +68,11 @@ const Chat = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/auth/getuser", {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getuser`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "authorization": localStorage.getItem("token") || "",
         },
         credentials: "include",
       });
@@ -101,7 +103,6 @@ const Chat = () => {
     <div className="w-full h-screen flex">
       <SideMsgBar />
       <ChatScreen  Socket={socket}/> 
-      {message}
     </div>
   );
 };
