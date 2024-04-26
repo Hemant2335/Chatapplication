@@ -23,8 +23,14 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ Status: false, error: "Invalid Password" });
     }
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || "secret");
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      domain: "vercel.app"
+    });
+    
     console.log("Successfully set cookie");
-    res.cookie("token", token);
     res.json({ Status: true, token: token });
     
   } catch (error) {
@@ -74,7 +80,6 @@ router.post("/register", async (req, res) => {
       { id: newuser.id },
       process.env.JWT_SECRET || "secret"
     );
-    res.cookie("token", token);
     res.json({ Status: true, token: token });
     
   } catch (error) {
