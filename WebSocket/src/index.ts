@@ -22,9 +22,9 @@ const handleMessages = async (data: any) => {
   const newdata = res.data;
   console.log(newdata.chatId);
   const retdata = {
-    Chatid: newdata.chatId,
-    newchat: newdata.newchat,
-  };
+    Chatid : newdata.chatId,
+    newchat : newdata.newchat,
+  }
   return retdata;
 };
 wss.on("connection", function connection(ws) {
@@ -41,16 +41,8 @@ wss.on("connection", function connection(ws) {
         break;
       case "message":
         const handleMsg = async (data: any) => {
-          let Chatid = data.Chatid;
-          let newchat = false;
-          console.log("J=heyyyy" , Chatid);
-          if (Chatid == undefined) {
-            console.log("NewChat found")
-            const res = await handleMessages(data);
-            Chatid = res.Chatid;
-            newchat = res.newchat
-          }
-          console.log("Yaya !" , newchat);
+          const {Chatid , newchat} = await handleMessages(data);
+          console.log(Chatid);
           const newuserSocket = User.get(data.toid);
           const newuserSocket1 = User.get(data.fromid);
           if (newuserSocket1 && newchat) {
@@ -60,7 +52,7 @@ wss.on("connection", function connection(ws) {
                 fromUser: data.fromid,
                 toUser: data.toid,
                 message: data.message,
-                newchat: newchat,
+                newchat : newchat,
               })
             );
             console.log("Message sent to user", data.fromid);
@@ -75,7 +67,7 @@ wss.on("connection", function connection(ws) {
                 fromUser: data.fromid,
                 toUser: data.toid,
                 message: data.message,
-                newchat: newchat,
+                newchat : newchat,
               })
             );
             console.log("Message sent to user", data.toid);

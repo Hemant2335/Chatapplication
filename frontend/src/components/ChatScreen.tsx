@@ -75,7 +75,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
       Socket.send(JSON.stringify(SendMsg));
       setinputmsg("");
       const data: message = {
-        id: Math.floor(Math.random()*999).toString(),
+        id: "1",
         ChatId: SendMsg.Chatid,
         fromUser: SendMsg.fromid,
         toUser: SendMsg.toid,
