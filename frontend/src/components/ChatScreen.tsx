@@ -1,33 +1,18 @@
-import ChatScreenTopBar from "./ChatScreenTopBar";
-import { ChatDetails } from "../store/atoms/Chat";
-import { useRecoilValue, useRecoilState } from "recoil";
-import { messagestate } from "../store/atoms/Chat";
-import { useEffect, useState } from "react";
-import { userState } from "../store/atoms/User";
+import { useEffect, useRef, useState } from "react";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { FiPlusCircle, FiSend } from "react-icons/fi";
-import { useCookies } from "react-cookie";
+import { ChatDetails, chatstate, messageType, chatsType } from "../store/atoms/Chat";
+import { userState } from "../store/atoms/User";
+import ChatScreenTopBar from "./ChatScreenTopBar";
+import { fetchChat, fetchMsg } from "../pages/Chat";
 
-type message = {
-  id: String;
-  message: String;
-  createdAt: Date;
-  fromUser: String;
-  toUser: String;
-  ChatId: String;
-};
-
-type chatmessage = {
-  message: String;
-  createdAt: Date;
-};
-
-type sendMsg = {
-  token: String;
-  type: String;
-  message: String;
-  Chatid: String;
-  fromid: String;
-  toid: String;
+type SendMsg = {
+  token: string;
+  type: string;
+  message: string;
+  chatId: string;
+  fromId: string;
+  toId: String;
 };
 
 type ChatScreenProps = {
@@ -35,123 +20,162 @@ type ChatScreenProps = {
 };
 
 const ChatScreen = ({ Socket }: ChatScreenProps) => {
-  const chatdetails: any = useRecoilValue(ChatDetails);
-  const [messages, setmessages] = useRecoilState(messagestate);
+  const [inputMsg, setInputMsg] = useState("");
   const user = useRecoilValue(userState);
-  const [inputmsg, setinputmsg] = useState<string>("");
-  const [Messages, setMessages] = useState<message[]>([]);
-  const [fromMsg, setfromMsg] = useState<chatmessage[]>([]);
-  const [toMsg, settoMsg] = useState<chatmessage[]>([]);
-  const [SendMsg, setSendMsg] = useState<sendMsg>({
-    token: "",
-    type: "",
-    message: "",
-    Chatid: "",
-    fromid: "",
-    toid: "",
-  });
-  const [cookies] = useCookies(["token"]);
+  const [chatDetails, setChatDetails] = useRecoilState(ChatDetails);
+  const [chat, setChat] = useRecoilState(chatstate);
 
-  //Finding the Messages of this Chat
-  const findChatMessages = () => {
-    const chatmessages = messages.filter(
-      (item: any) => item.ChatId === chatdetails.ChatId
-    );
-    setMessages(chatmessages);
-  };
-  // Seprating the Messages
-  const SeprateMsg = () => {
-    const frommsg = Messages.filter((item) => item.fromUser === user.id);
-    const tomsg = Messages.filter((item) => item.fromUser === chatdetails.id);
-    setfromMsg(frommsg);
-    settoMsg(tomsg);
-  };
-  // Sending the Message
+  const chatContainerRef = useRef<HTMLDivElement>(null); // Reference for the chat container
+
   const handleSendMessage = () => {
-    console.log("Sending Message");
-    console.log(chatdetails);
-    SendMsg.message = inputmsg;
-    if (SendMsg.toid.length > 0) {
-      Socket.send(JSON.stringify(SendMsg));
-      setinputmsg("");
-      const data: message = {
-        id: "1",
-        ChatId: SendMsg.Chatid,
-        fromUser: SendMsg.fromid,
-        toUser: SendMsg.toid,
-        message: SendMsg.message,
-        createdAt: new Date(),
-      };
-      setmessages([...messages, data]);
-    } else {
-      alert("Please Wait");
-    }
+    if (!inputMsg.trim()) return;
+
+    const msg: SendMsg = {
+      token: localStorage.getItem("token") || "",
+      type: "private",
+      message: inputMsg,
+      chatId: user.ChatId,
+      fromId: user.id,
+      toId: chatDetails.userID,
+    };
+
+    const newMsg: messageType = {
+      id: crypto.randomUUID(),
+      message: msg.message,
+      fromUser: msg.fromId,
+      toUser: msg.toId,
+      createdAt: new Date(),
+    };
+
+    // Update local state for chat details
+    setChatDetails((prevDetails) => ({
+      ...prevDetails,
+      send_message: [...(prevDetails.send_message || []), newMsg],
+    }));
+
+    // Update the main chat list
+    setChat((prevChat) =>
+      prevChat.map((item) =>
+        item.userID === newMsg.toUser
+          ? { ...item, send_message: [...(item.send_message || []), newMsg] }
+          : item
+      )
+    );
+
+    Socket.send(JSON.stringify(msg));
+    setInputMsg(""); // Clear input
   };
-  // useEffects
-  useEffect(() => {
-    SeprateMsg();
-  }, [Messages]);
+
+  const handleUpdateChatWithMessage = async (chatId: string) => {
+    const updatedChat = await fetchChat();
+    const chatWithMessages = updatedChat.map((item: chatsType) => {
+      item.send_message = [];
+      item.recived_message = [];
+      return item;
+    });
+
+    const fetchedMessages = await fetchMsg();
+    if (fetchedMessages) {
+      fetchedMessages.forEach((msg: messageType) => {
+        chatWithMessages.forEach((item: chatsType) => {
+          if (msg.fromUser === item.userID && msg.toUser === user.id) {
+            item.send_message.push(msg);
+          } else if (msg.fromUser === user.id && msg.toUser === item.userID) {
+            item.recived_message.push(msg);
+          }
+        });
+      });
+    }
+    setChat(chatWithMessages);
+  };
 
   useEffect(() => {
-    console.log("Mesasges updated");
-    if (chatdetails) {
-      SendMsg.token = cookies.token;
-      SendMsg.type = "message";
-      SendMsg.message = "Hello";
-      SendMsg.Chatid = chatdetails.ChatId;
-      SendMsg.fromid = user.id;
-      SendMsg.toid = chatdetails.id;
-      setSendMsg(SendMsg);
+    Socket.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+
+      if (data.type === "private") {
+        const newMsg: messageType = {
+          id: data.id,
+          message: data.message,
+          fromUser: data.fromUser,
+          toUser: data.toUser,
+          createdAt: new Date(data.createdAt),
+        };
+
+        // If the message is from the current chat, update chatDetails
+        if (chatDetails.userID === data.fromUser) {
+          setChatDetails((prevDetails) => ({
+            ...prevDetails,
+            recived_message: [...(prevDetails.recived_message || []), newMsg],
+          }));
+        }
+
+        // Update the chat list state
+        setChat((prevChat) =>
+          prevChat.map((item) =>
+            item.userID === data.fromUser
+              ? { ...item, send_message: [...(item.send_message || []), newMsg] }
+              : item
+          )
+        );
+      } else if (data.type === "chatId") {
+        handleUpdateChatWithMessage(data.chatId);
+      }
+    };
+  }, [Socket, chatDetails.userID]);
+
+  // Scroll to bottom when chatDetails are updated
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-    findChatMessages();
-  }, [messages, chatdetails]);
+  }, [chatDetails]);
 
   return (
-    <div className="w-full h-screen py-4 pl-2  pr-4 items-center justify-center ">
-      <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2">
-        <ChatScreenTopBar />
-        <div className="w-full flex overflow-y-scroll no-scrollbar justify-between h-[75vh] bg-[#222222] ">
-          {/* //Sent Messages */}
-          <div>
-            {fromMsg.map((item: any) => (
-              <div
-                key={item.id}
-                className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2 ml-auto"
-              >
-                <p className="text-white">{item.message}</p>
-              </div>
-            ))}
+    <div className="w-full h-screen py-4 pl-2 pr-4 items-center justify-center">
+      {!chatDetails ? (
+        <div>No Chat</div>
+      ) : (
+        <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2">
+          <ChatScreenTopBar />
+          <div
+            ref={chatContainerRef} // Attach the reference
+            className="w-full px-[5vw] flex overflow-y-scroll no-scrollbar flex-col h-[75vh] bg-[#222222] p-4"
+          >
+            {[...(chatDetails.send_message || []), ...(chatDetails.recived_message || [])]
+              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              .map((item: messageType) => (
+                <div
+                  // key={item.id}
+                  className={`${
+                    item.fromUser === user.id
+                      ? "self-end bg-green-600"
+                      : "self-start bg-gray-700"
+                  } text-white p-2 rounded-lg max-w-xs my-2`}
+                >
+                  <p>{item.message}</p>
+                </div>
+              ))}
           </div>
 
-          {/* Recieved Messages */}
-          <div>
-            {toMsg.map((item: any) => (
-              <div
-                key={item.id}
-                className="bg-[#2B2D31] w-[80%] rounded-md p-2 my-2"
-              >
-                <p className="text-white">{item.message}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="justify-between mx-[3vw] pr-[2vw] pl-[1vw]  rounded-md  text-gray-400 bg-[#1A1A1A] hidden md:flex  items-center">
-          <div className="flex items-center gap-1">
-            <FiPlusCircle />
-            <input
-              type="text"
-              placeholder="type your message..."
-              className=" bg-[#1A1A1A] p-[1.5vh] focus:outline-none text-sm text-gray-300 w-full"
-              onChange={(e) => setinputmsg(e.target.value)}
-              value={inputmsg}
+          <div className="justify-between mx-[3vw] pr-[2vw] pl-[1vw] rounded-md text-gray-400 bg-[#1A1A1A] hidden md:flex items-center">
+            <div className="flex items-center gap-1">
+              <FiPlusCircle />
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="bg-[#1A1A1A] p-[1.5vh] focus:outline-none text-sm text-gray-300 w-full"
+                onChange={(e) => setInputMsg(e.target.value)}
+                value={inputMsg}
+              />
+            </div>
+            <FiSend
+              className="text-[#5865F2] cursor-pointer"
+              onClick={handleSendMessage}
             />
           </div>
-          <FiSend
-            className="text-[#5865F2] cursor-pointer"
-            onClick={() => handleSendMessage()}
-          />
         </div>
-      </div>
+      )}
     </div>
   );
 };

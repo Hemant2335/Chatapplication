@@ -28,8 +28,8 @@ model Chat {
   id        String @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  touserID  String
   userID    String
+  fromUserId String
   user      User @relation(fields: [userID], references: [id])
   messages  Messages[]
 }

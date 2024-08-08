@@ -12,80 +12,124 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const ws_1 = __importDefault(require("ws"));
+const ws_1 = require("ws");
 const axios_1 = __importDefault(require("axios"));
-const app = (0, express_1.default)();
-const httpserver = app.listen(8080, () => {
-    console.log("Server is running on port 8080");
-});
-const wss = new ws_1.default.Server({ server: httpserver });
-const User = new Map();
-const handleMessages = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(data);
-    const res = yield axios_1.default.post("http://localhost:3000/api/chat/sendmessage", {
-        token: data.token,
-        toid: data.toid,
-        message: data.message,
-    });
-    const newdata = res.data;
-    console.log(newdata.chatId);
-    const retdata = {
-        Chatid: newdata.chatId,
-        newchat: newdata.newchat,
-    };
-    return retdata;
-});
-wss.on("connection", function connection(ws) {
-    ws.on("message", function incoming(message, isBinary) {
-        const data = JSON.parse(message.toString());
-        console.log(data);
-        switch (data.type) {
-            case "user":
-                console.log(data.id);
-                User.set(data.id, ws);
-                let userSocket = User.get(data.id);
-                userSocket.send(JSON.stringify({ Msg: "User Added" }));
-                console.log("User connected with id", data.id);
-                break;
-            case "message":
-                const handleMsg = (data) => __awaiter(this, void 0, void 0, function* () {
-                    const { Chatid, newchat } = yield handleMessages(data);
-                    console.log(Chatid);
-                    const newuserSocket = User.get(data.toid);
-                    const newuserSocket1 = User.get(data.fromid);
-                    if (newuserSocket1 && newchat) {
-                        newuserSocket1.send(JSON.stringify({
-                            ChatId: Chatid,
-                            fromUser: data.fromid,
-                            toUser: data.toid,
-                            message: data.message,
-                            newchat: newchat,
-                        }));
-                        console.log("Message sent to user", data.fromid);
-                    }
-                    else {
-                        console.log("User not found or disconnected");
-                        // Optionally handle the case where the user is not found or disconnected
-                    }
-                    if (newuserSocket) {
-                        newuserSocket.send(JSON.stringify({
-                            ChatId: Chatid,
-                            fromUser: data.fromid,
-                            toUser: data.toid,
-                            message: data.message,
-                            newchat: newchat,
-                        }));
-                        console.log("Message sent to user", data.toid);
-                    }
-                    else {
-                        console.log("User not found or disconnected");
-                        // Optionally handle the case where the user is not found or disconnected
-                    }
-                });
-                handleMsg(data);
-                break;
+const wss = new ws_1.WebSocketServer({ port: 8080 });
+// Map to store clients and groups
+const clients = new Map();
+const groups = new Map();
+const handleCreateUser = (Id, client) => {
+    clients.set(Id, client);
+    console.log("User Created with Id", Id);
+};
+wss.on("connection", (ws) => {
+    ws.send(JSON.stringify({ type: "id", id: ws.id }));
+    ws.on("message", (message) => {
+        try {
+            const msg = JSON.parse(message.toString());
+            switch (msg.type) {
+                case "private":
+                    handlePrivateMessage(ws, msg);
+                    break;
+                case "createUser":
+                    handleCreateUser(msg.id, ws);
+                    break;
+                case "group":
+                    handleGroupMessage(ws, msg);
+                    break;
+                default:
+                    console.error("Unknown message type:", msg.type);
+            }
+        }
+        catch (error) {
+            console.error("Error handling message:", error);
         }
     });
-    ws.send(JSON.stringify({ Msg: "Welcome to websocket server with Users" }));
+    ws.on("close", () => {
+        // Remove client from map
+        if (ws.id) {
+            clients.delete(ws.id);
+        }
+    });
 });
+function handleUpdateDatabase(data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            console.log(data);
+            const res = yield axios_1.default.post("http://localhost:3000/api/chat/sendmessage", {
+                token: data.token,
+                toid: data.toId,
+                message: data.message,
+            });
+            const newdata = res.data;
+            console.log(newdata.chatId);
+            const retdata = {
+                Chatid: newdata.chatId,
+                newchat: newdata.newchat,
+            };
+            return retdata;
+        }
+        catch (error) {
+            console.log(error);
+        }
+    });
+}
+function handlePrivateMessage(sender, msg) {
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log(msg);
+        if (msg.toId && clients.has(msg.toId)) {
+            const recipient = clients.get(msg.toId);
+            if (recipient) {
+                const sendMsg = {
+                    type: "private",
+                    fromUser: msg.fromId,
+                    message: msg.message,
+                    toUser: msg.toId,
+                    createdAt: new Date()
+                };
+                recipient.send(JSON.stringify(sendMsg));
+                console.log("Message sent to user", sendMsg);
+                const data = yield handleUpdateDatabase(msg);
+                // Now Creating new Chat if newchat is true and sending the chatId to the user and recipient
+                if (data && data.newchat) {
+                    sender.send(JSON.stringify({ type: "chatId", chatId: data.Chatid[0] }));
+                    recipient.send(JSON.stringify({ type: "chatId", chatId: data.Chatid[1] }));
+                }
+            }
+        }
+        else {
+            console.error("Recipient not found");
+        }
+    });
+}
+function handleGroupMessage(sender, msg) {
+    if (msg.groupId && groups.has(msg.groupId)) {
+        const group = groups.get(msg.groupId);
+        if (group) {
+            group.forEach((client) => {
+                if (client !== sender) {
+                    client.send(JSON.stringify({
+                        type: "group",
+                        from: sender.id,
+                        groupId: msg.groupId,
+                        content: msg.content,
+                    }));
+                }
+            });
+        }
+    }
+    else {
+        console.error("Group not found");
+    }
+}
+// Function to create a new group and add clients to it
+function createGroup(groupId, clientIds) {
+    const group = new Set();
+    clientIds.forEach((clientId) => {
+        if (clients.has(clientId)) {
+            group.add(clients.get(clientId));
+        }
+    });
+    groups.set(groupId, group);
+}
+console.log("WebSocket server is running on ws://localhost:8080");

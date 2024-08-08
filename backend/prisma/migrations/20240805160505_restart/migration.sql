@@ -5,7 +5,7 @@ CREATE TABLE "User" (
     "username" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "profile" TEXT NOT NULL,
+    "profile" TEXT NOT NULL DEFAULT 'https://res.cloudinary.com/dri5u2nqb/image/upload/v1713511395/zrtp9p7eote4ixokmwjx.jpg',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -19,17 +19,6 @@ CREATE TABLE "Messages" (
     "toUser" TEXT NOT NULL,
 
     CONSTRAINT "Messages_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "GroupMessages" (
-    "id" TEXT NOT NULL,
-    "messageId" TEXT NOT NULL,
-    "UserId" TEXT NOT NULL,
-    "message" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "GroupMessages_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

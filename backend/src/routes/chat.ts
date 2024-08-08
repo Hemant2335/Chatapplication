@@ -25,18 +25,11 @@ router.post("/sendmessage", async (req, res) => {
     // Check if Chat already Exists
     const chat = await prisma.chat.findFirst({
       where: {
-        OR: [
-          {
-            userID: fromid,
-            touserID: toid,
-          },
-          {
-            userID: toid,
-            touserID: fromid,
-          },
-        ],
+        userID: toid,
+        fromUserId : fromid
       },
     });
+    console.log("Chat already Exits" , chat);
     if (chat) {
       //Save message in database
       await prisma.messages.create({
@@ -52,12 +45,20 @@ router.post("/sendmessage", async (req, res) => {
 
     } else {
       //Create Chat
+      
       const newChat = await prisma.chat.create({
         data: {
-          userID: fromid,
-          touserID: toid,
+          userID: toid,
+          fromUserId : fromid
         },
       });
+      const newChat2 = await prisma.chat.create({
+        data: {
+          userID: fromid,
+          fromUserId : toid
+        },
+      });
+      console.log("Created New Chat" ,newChat);
       //Save message in database
       await prisma.messages.create({
         data: {
@@ -67,7 +68,7 @@ router.post("/sendmessage", async (req, res) => {
           message: message,
         },
       });
-      return res.json({ Status: true, newchat : true,message: "Message Saved Successfully" , chatId : newChat.id});
+      return res.json({ Status: true, newchat : true,message: "Message Saved Successfully" , chatId : [newChat.id , newChat2.id]});
     }
     
   } catch (error) {
@@ -103,14 +104,7 @@ router.get("/getchats", authentication, async (req, res) => {
   try {
     const chats = await prisma.chat.findMany({
       where: {
-        OR: [
-          {
-            userID: id,
-          },
-          {
-            touserID: id,
-          },
-        ],
+        fromUserId : id
       },
     });
     return res.json({ Status: true, chats: chats });
@@ -126,28 +120,7 @@ router.get("/findchat" , authentication , async (req, res) => {
   try {
     const chat = await prisma.chat.findFirst({
       where : {
-        OR : [
-          {
-            AND : [
-              {
-                userID : id
-              },
-              {
-                touserID : userid
-              }
-            ]
-          },
-          {
-            AND : [
-              {
-                userID : userid
-              },
-              {
-                touserID : id
-              }
-            ]
-          }
-        ]
+        userID: id
       }
     });
     if(!chat)

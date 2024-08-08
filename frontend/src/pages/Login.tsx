@@ -1,10 +1,14 @@
 import { useState } from "react";
 import banner from "../assets/banner.jpg";
 import { useNavigate } from "react-router-dom";
+import Loading from "../components/Loading";
+import { userState } from "../store/atoms/User";
+import { useSetRecoilState } from "recoil";
 
 
 const Login = () => {
   const [Email, setEmail] = useState<string | null>(null);
+  const setUserState = useSetRecoilState(userState);
   const [Password, setPassword] = useState<string | null>(null);
   const [Warning, setWarning] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -34,6 +38,8 @@ const Login = () => {
         return;
       }
       localStorage.setItem("token", data.token);
+      console.log(data);
+      setUserState(data.user);
       navigate("/");
     } catch (error) {
       console.log(error);
@@ -42,6 +48,8 @@ const Login = () => {
   };
 
   return (
+    <>
+    {/* <Loading /> */}
     <div className="flex">
       <div className="md:flex hidden cursor-pointer  text-[3vh] w-[40vw] h-screen font-bold ">
         <img src={banner} className=" object-cover w-full h-full" alt="logo" />
@@ -107,6 +115,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

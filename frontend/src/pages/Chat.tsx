@@ -1,108 +1,124 @@
-import { useEffect} from "react";
+import { useEffect } from "react";
 import { userState } from "../store/atoms/User";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState, useSetRecoilState, useRecoilValue } from "recoil";
 import { useNavigate } from "react-router-dom";
-import { useSocket } from "../hooks/useSocket";
+import { chatsType, messageType } from "../store/atoms/Chat";
 import { messagestate } from "../store/atoms/Chat";
 import { chatstate } from "../store/atoms/Chat";
 import SideMsgBar from "../components/SideMsgBar";
 import ChatScreen from "../components/ChatScreen";
 
+export const fetchMsg = async () => {
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/chat/getmessages`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: localStorage.getItem("token") || "",
+        },
+        credentials: "include",
+      }
+    );
+
+    const data = await res.json();
+    if (!data.Status) {
+      alert(data.error);
+      return;
+    }
+    console.log("Fetched new Messages", data.messages);
+    return data.messages;
+  } catch (error) {
+    return console.log(error);
+  }
+};
+
+export const fetchChat = async () => {
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/chat/getchats`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: localStorage.getItem("token") || "",
+        },
+        credentials: "include",
+      }
+    );
+
+    const data = await res.json();
+    if (!data.Status) {
+      alert(data.error);
+    }
+    console.log("Fetched new Chats", data.chats);
+    return data.chats;
+  } catch (error) {
+    return console.log(error);
+  }
+};
+
 const Chat = () => {
-  const setuser = useSetRecoilState(userState);
   const setmsg = useSetRecoilState(messagestate);
-  const [chat , setchat] = useRecoilState(chatstate);
+  const [chat, setchat] = useRecoilState(chatstate);
+  const user = useRecoilValue(userState);
   const navigate = useNavigate();
-  const { socket}  = useSocket(
-    "ws://localhost:8080"
-  );
+  const newsocket = new WebSocket("ws://localhost:8080");
 
-  const fetchMsg = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/getmessages`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "authorization": localStorage.getItem("token") || "",
-        },
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!data.Status) {
-        alert(data.error);
-        return navigate("/login");
-      }
-      setmsg(data.messages);
-    } catch (error) {
-      return console.log(error);
-    }
+  newsocket.onopen = () => {
+    console.log("Connected to server");
+    const userID = user.id;
+    newsocket.send(JSON.stringify({ type: "createUser", id: userID }));
   };
 
-  const fetchChat = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/getchats`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "authorization": localStorage.getItem("token") || "",
-        },
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!data.Status) {
-        alert(data.error);
-        return navigate("/login");
-      }
-      console.log("Fetched new Chats" , data.chats);
-      if(data.chats.length > chat.length)
-        {
-          setchat(data.chats);
-        }
-      
-    } catch (error) {
-      return console.log(error);
-    }
+  newsocket.onclose = () => {
+    console.log("Disconnected from server");
   };
 
-  const fetchUser = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getuser`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "authorization": localStorage.getItem("token") || "",
-        },
-        credentials: "include",
+  // Handle the First refersh to get Message from the Server
+
+  const handleUpdateChatwithMessage = async () => {
+    const newchat = await fetchChat();
+    const chat = newchat.map((item: chatsType) => {
+      item.send_message = [];
+      item.recived_message = [];
+      return item;
+    });
+    const fetchmsg = await fetchMsg();
+    if (fetchmsg) {
+      fetchmsg.map((msg: messageType) => {
+        chat.map((item: chatsType) => {
+          if (msg.fromUser === item.userID && msg.toUser === user.id) {
+            if (item.send_message === undefined) {
+              item.send_message = [];
+              item.send_message.push(msg);
+            } else {
+              item.send_message.push(msg);
+            }
+          } else if (msg.fromUser === user.id && msg.toUser === item.userID) {
+            if (item.recived_message === undefined) {
+              item.recived_message = [];
+              item.recived_message.push(msg);
+            } else {
+              item.recived_message.push(msg);
+            }
+          }
+        });
       });
-
-      const data = await res.json();
-      if (!data.Status) {
-        alert(data.error);
-        return navigate("/login");
-      }
-      setuser(data.user);
-    } catch (error) {
-      return console.log(error);
     }
+    setchat(chat);
+    console.log("Updated Chat", chat);
   };
-
 
   useEffect(() => {
-    fetchChat();
-  }, [chat]);
-
-  useEffect(() => {
-    fetchUser();
-    fetchMsg();
-    
+    handleUpdateChatwithMessage();
   }, []);
 
   return (
     <div className="w-full h-screen flex">
       <SideMsgBar />
-      <ChatScreen  Socket={socket}/> 
+      <ChatScreen Socket={newsocket} />
     </div>
   );
 };

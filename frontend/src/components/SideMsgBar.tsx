@@ -22,11 +22,14 @@ const SideMsgBar = () => {
   const user = useRecoilValue(userState);
   const [Users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
+
+
+  
   const fetchUsers = async () => {
     if (Chat.length === 0) return;
     console.log("fetch Chat" , Chat);
     const promises = Chat.map(async (item) => {
-      const id = item.touserID === user.id ? item.userID : item.touserID;
+      const id = item.userID === user.id ? item.userID : item.userID;
       if (id == null) return null;
       return useFetchuser(id);
     });
@@ -34,7 +37,7 @@ const SideMsgBar = () => {
     const filteredUsers = fetchedUsers.filter(user => user !== null);
     const updatedUsers = filteredUsers.map(user => ({
       ...user,
-      ChatId: Chat.find(chat => chat.touserID === user.id || chat.userID === user.id)?.id
+      ChatId: Chat.find(chat => chat.userID === user.id || chat.userID === user.id)?.id
     }));
     console.log(updatedUsers);
     setUsers(updatedUsers);

@@ -31,7 +31,7 @@ router.post("/login", async (req, res) => {
     });
     
     console.log("Successfully set cookie");
-    res.json({ Status: true, token: token });
+    res.json({ Status: true, token: token  , user : user});
     
   } catch (error) {
     console.log(error);
