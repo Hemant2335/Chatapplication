@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRecoilValue } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import { chatstate } from "../store/atoms/Chat";
 import { useFetchuser } from "../hooks/useFetchuser";
 import { userState } from "../store/atoms/User";
@@ -8,6 +8,7 @@ import { FiPlus } from "react-icons/fi";
 import { FiAlignCenter, FiSettings ,  FiSearch } from "react-icons/fi";
 import SideUserComp from "./SideUserComp";
 import { useNavigate } from "react-router-dom";
+import { IsCreateGroupPopupAtom } from "../store/atoms/CompState";
 
 type User = {
   id : string;
@@ -22,7 +23,7 @@ const SideMsgBar = () => {
   const user = useRecoilValue(userState);
   const [Users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
-
+  const SetIsCreateGroupPopup = useSetRecoilState(IsCreateGroupPopupAtom);
 
   
   const fetchUsers = async () => {
@@ -63,7 +64,7 @@ const SideMsgBar = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <FiPlus className=" text-gray-500" onClick={()=>navigate("/Explore")}/>
+          <FiPlus className=" text-gray-500" onClick={()=>SetIsCreateGroupPopup(true)}/>
           <FiAlignCenter className=" text-gray-500" />
         </div>
       </div>

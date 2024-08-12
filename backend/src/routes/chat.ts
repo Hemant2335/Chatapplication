@@ -26,10 +26,10 @@ router.post("/sendmessage", async (req, res) => {
     const chat = await prisma.chat.findFirst({
       where: {
         userID: toid,
-        fromUserId : fromid
+        fromUserId: fromid,
       },
     });
-    console.log("Chat already Exits" , chat);
+    console.log("Chat already Exits", chat);
     if (chat) {
       //Save message in database
       await prisma.messages.create({
@@ -41,24 +41,28 @@ router.post("/sendmessage", async (req, res) => {
         },
       });
 
-      res.json({ Status: true, newchat : false,message: "Message Saved Successfully" , chatId : chat.id});
-
+      res.json({
+        Status: true,
+        newchat: false,
+        message: "Message Saved Successfully",
+        chatId: chat.id,
+      });
     } else {
       //Create Chat
-      
+
       const newChat = await prisma.chat.create({
         data: {
           userID: toid,
-          fromUserId : fromid
+          fromUserId: fromid,
         },
       });
       const newChat2 = await prisma.chat.create({
         data: {
           userID: fromid,
-          fromUserId : toid
+          fromUserId: toid,
         },
       });
-      console.log("Created New Chat" ,newChat);
+      console.log("Created New Chat", newChat);
       //Save message in database
       await prisma.messages.create({
         data: {
@@ -68,9 +72,13 @@ router.post("/sendmessage", async (req, res) => {
           message: message,
         },
       });
-      return res.json({ Status: true, newchat : true,message: "Message Saved Successfully" , chatId : [newChat.id , newChat2.id]});
+      return res.json({
+        Status: true,
+        newchat: true,
+        message: "Message Saved Successfully",
+        chatId: [newChat.id, newChat2.id],
+      });
     }
-    
   } catch (error) {
     console.log(error);
     return res.json({ Status: false, error: "Internal Server Error" });
@@ -104,7 +112,7 @@ router.get("/getchats", authentication, async (req, res) => {
   try {
     const chats = await prisma.chat.findMany({
       where: {
-        fromUserId : id
+        fromUserId: id,
       },
     });
     return res.json({ Status: true, chats: chats });
@@ -114,24 +122,61 @@ router.get("/getchats", authentication, async (req, res) => {
   }
 });
 
-router.get("/findchat" , authentication , async (req, res) => {
-  const {userid} = req.query as any;
-  const {id} = (req as any).body.user;
+router.get("/findchat", authentication, async (req, res) => {
+  const { userid } = req.query as any;
+  const { id } = (req as any).body.user;
   try {
     const chat = await prisma.chat.findFirst({
-      where : {
-        userID: id
-      }
+      where: {
+        userID: id,
+      },
     });
-    if(!chat)
-      {
-        return res.json({Status : false , error : "Chat Not Found" , chat : null});
-      }
-    res.json({Status : true , chat : chat.id});
+    if (!chat) {
+      return res.json({ Status: false, error: "Chat Not Found", chat: null });
+    }
+    res.json({ Status: true, chat: chat.id });
   } catch (error) {
     console.log(error);
     res.status(400).json({ Status: false, error: "Internal Server Error" });
   }
-})
+});
+
+// Group Messaging Routes
+
+router.post("/creategroup", authentication, async (req, res) => {
+  const { name, profile } = req.body;
+  try {
+    const group = await prisma.groupChat.create({
+      data: {
+        name: name,
+        profile: profile,
+      },
+    });
+    res.json({ Status: true, group: group });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+});
+
+// Adding Multiple or Single Users
+
+router.post("/adduser", authentication, async (req, res) => {
+  const { groupid, userIds } = req.body;
+  try {
+    const group = await prisma.groupChat.update({
+      where: { id: groupid },
+      data: {
+        users: {
+          connect: userIds.map((userId:string) => ({ id: userId })),
+        },
+      },
+    });
+    res.json({ Status: true, group: group });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+});
 
 module.exports = router;

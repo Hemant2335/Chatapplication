@@ -7,6 +7,8 @@ import { messagestate } from "../store/atoms/Chat";
 import { chatstate } from "../store/atoms/Chat";
 import SideMsgBar from "../components/SideMsgBar";
 import ChatScreen from "../components/ChatScreen";
+import { IsCreateGroupPopupAtom } from "../store/atoms/CompState";
+import CreateGroup from "../components/Popups/CreateGroup";
 
 export const fetchMsg = async () => {
   try {
@@ -65,6 +67,9 @@ const Chat = () => {
   const user = useRecoilValue(userState);
   const navigate = useNavigate();
   const newsocket = new WebSocket("ws://localhost:8080");
+  const [isCreateGroupPopup, setisCreateGroupPopup] = useRecoilState(
+    IsCreateGroupPopupAtom
+  );
 
   newsocket.onopen = () => {
     console.log("Connected to server");
@@ -118,6 +123,7 @@ const Chat = () => {
   return (
     <div className="w-full h-screen flex">
       <SideMsgBar />
+      {isCreateGroupPopup && <CreateGroup/>}
       <ChatScreen Socket={newsocket} />
     </div>
   );

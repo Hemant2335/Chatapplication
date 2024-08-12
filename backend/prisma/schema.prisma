@@ -39,6 +39,7 @@ model GroupChat {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   name      String
+  profile   String 
   users     User[]
   messages  GroupMessages[]
 }
@@ -56,8 +57,6 @@ model Messages {
 
 model GroupMessages {
   id        String @id @default(cuid())
-  messageId String
-  UserId    String
   message   String
   createdAt DateTime @default(now())
   GroupChatId String
