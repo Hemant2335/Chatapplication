@@ -1,52 +1,83 @@
 import { useEffect, useState } from "react";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilValue, useSetRecoilState , useRecoilState} from "recoil";
 import { chatstate } from "../store/atoms/Chat";
 import { useFetchuser } from "../hooks/useFetchuser";
 import { userState } from "../store/atoms/User";
 import Logo from "../assets/Logo.png";
 import { FiPlus } from "react-icons/fi";
-import { FiAlignCenter, FiSettings ,  FiSearch } from "react-icons/fi";
+import { FiAlignCenter, FiSettings, FiSearch } from "react-icons/fi";
 import SideUserComp from "./SideUserComp";
-import { useNavigate } from "react-router-dom";
+import { groupChat } from "../store/atoms/Chat";
 import { IsCreateGroupPopupAtom } from "../store/atoms/CompState";
+import SideGroupComp from "./SideGroupComp";
 
 type User = {
-  id : string;
+  id: string;
   username: string;
   name: string;
   profile: string;
-  ChatId : String;
+  ChatId: String;
 };
 
 const SideMsgBar = () => {
   const Chat = useRecoilValue(chatstate);
   const user = useRecoilValue(userState);
+  const [IsUserChats, setIsUserChats] = useState(false);
   const [Users, setUsers] = useState<User[]>([]);
-  const navigate = useNavigate();
+  const [GroupChat, setGroupChat] = useRecoilState(groupChat);
   const SetIsCreateGroupPopup = useSetRecoilState(IsCreateGroupPopupAtom);
 
-  
   const fetchUsers = async () => {
     if (Chat.length === 0) return;
-    console.log("fetch Chat" , Chat);
+    console.log("fetch Chat", Chat);
     const promises = Chat.map(async (item) => {
       const id = item.userID === user.id ? item.userID : item.userID;
       if (id == null) return null;
       return useFetchuser(id);
     });
     const fetchedUsers = await Promise.all(promises);
-    const filteredUsers = fetchedUsers.filter(user => user !== null);
-    const updatedUsers = filteredUsers.map(user => ({
+    const filteredUsers = fetchedUsers.filter((user) => user !== null);
+    const updatedUsers = filteredUsers.map((user) => ({
       ...user,
-      ChatId: Chat.find(chat => chat.userID === user.id || chat.userID === user.id)?.id
+      ChatId: Chat.find(
+        (chat) => chat.userID === user.id || chat.userID === user.id
+      )?.id,
     }));
     console.log(updatedUsers);
     setUsers(updatedUsers);
   };
-  
+
+  const fetchGroup = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/chat/getgroup`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            authorization: localStorage.getItem("token") || "",
+          },
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+      if (!data.Status) {
+        alert(data.error);
+      }
+      console.log("Fetched new Group", data);
+      setGroupChat(data.groups);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
-    console.log("Side Chat" , Chat);
+    fetchGroup();
+  }, []);
+
+  useEffect(() => {
+    console.log("Side Chat", Chat);
     fetchUsers();
   }, [Chat]);
 
@@ -64,7 +95,10 @@ const SideMsgBar = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <FiPlus className=" text-gray-500" onClick={()=>SetIsCreateGroupPopup(true)}/>
+          <FiPlus
+            className=" text-gray-500"
+            onClick={() => SetIsCreateGroupPopup(true)}
+          />
           <FiAlignCenter className=" text-gray-500" />
         </div>
       </div>
@@ -80,13 +114,28 @@ const SideMsgBar = () => {
           width={10}
         />
       </div>
-      <div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
+      <div className="w-full h-[5vh] flex justify-between items-center px-4 mt-[2vh]">
+        <div onClick={()=>{setIsUserChats(true)}} className="bg-[#222222] w-full cursor-pointer mx-2 py-3 px-2 font-bold text-sm rounded-md shadow-2xl">
+          Chat
+        </div>
+        <div onClick={()=>{setIsUserChats(false)}} className="bg-[#222222] cursor-pointer w-full mx-2 py-3 px-2 font-bold  text-sm rounded-md shadow-2xl">
+          Group Chat
+        </div>
+      </div>
+      {IsUserChats ? (<div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
         {Users.map((item) => (
           <SideUserComp key={item.username} user={item} />
         ))}
-      </div>
+      </div>)  : (
+        <div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
+          {GroupChat?.map((item) => (
+          <SideGroupComp key={item.id} group = {item} />
+        ))}
+        </div>
+      )}
+      
       <div className="absolute w-full bottom-[2vh] pr-[2vw]">
-      <hr className=" border-1 border-gray-500 " />
+        <hr className=" border-1 border-gray-500 " />
         <div className="flex items-center rounded-lg justify-between  p-3">
           <div className="flex gap-2 items-center">
             <img
@@ -101,7 +150,7 @@ const SideMsgBar = () => {
               </p>
             </div>
           </div>
-          <FiSettings className="text-gray-500"/>
+          <FiSettings className="text-gray-500" />
         </div>
       </div>
     </div>

@@ -145,11 +145,20 @@ router.get("/findchat", authentication, async (req, res) => {
 
 router.post("/creategroup", authentication, async (req, res) => {
   const { name, profile } = req.body;
+  const { id } = (req as any).body.user;
   try {
     const group = await prisma.groupChat.create({
       data: {
         name: name,
-        profile: profile,
+        profile: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxlT_-PpQJbt3DsWOZDQYohRy4YF8ck1n8PA&s",
+      },
+    });
+    await prisma.groupChat.update({
+      where: { id: group.id },
+      data: {
+        users: {
+          connect: { id: id }, // Use this if the user already exists
+        },
       },
     });
     res.json({ Status: true, group: group });
@@ -177,6 +186,47 @@ router.post("/adduser", authentication, async (req, res) => {
     console.log(error);
     res.status(400).json({ Status: false, error: "Internal Server Error" });
   }
+});
+
+
+// Fetch User's specific Group
+
+router.get("/getgroup", authentication, async (req, res) => {
+  const { id } = (req as any).body.user;
+  try {
+    const groups = await prisma.groupChat.findMany({
+      where: {
+        users: {
+          some: {
+            id: id,
+          },
+        },
+      },
+      include : {
+        users : {
+          select : {
+            id : true,
+            name : true,
+            username : true,
+            profile : true,
+            GroupChats : true
+          }
+        }
+      }
+    });
+    res.json({ Status: true, groups: groups });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+});
+
+
+// Find Group Users
+
+router.post("/findgroupusers", authentication, async (req, res) => {
+
+
 });
 
 module.exports = router;

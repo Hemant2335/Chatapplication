@@ -1,12 +1,13 @@
 import { FiMoreVertical } from "react-icons/fi";
-import { ChatDetails, chatstate } from "../store/atoms/Chat";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { ChatDetails, chatstate  , GroupChatDetails, groupchatsType} from "../store/atoms/Chat";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { useNavigate } from "react-router-dom";
 import { userState } from "../store/atoms/User";
 import { chatsType } from "../store/atoms/Chat";
 
 const SideUserComp = ({ user }: any) => {
   const [Chatdetails, setChatDetails] = useRecoilState(ChatDetails);
+  const setGroupChatDetails = useSetRecoilState(GroupChatDetails);
   const userstate = useRecoilValue(userState);
   const chat = useRecoilValue(chatstate);
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const SideUserComp = ({ user }: any) => {
         username: user.username,
       };
       setChatDetails(newChat);
+      
     } else {
       setChatDetails({
         ...UserChat,
@@ -34,6 +36,7 @@ const SideUserComp = ({ user }: any) => {
         username: user.username,
       });
     }
+    setGroupChatDetails(null);
     if (!window.location.href.endsWith("/Chat")) {
       navigate("/Chat");
     }

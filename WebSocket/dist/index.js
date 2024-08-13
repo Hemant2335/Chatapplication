@@ -85,7 +85,7 @@ function handlePrivateMessage(sender, msg) {
                     fromUser: msg.fromId,
                     message: msg.message,
                     toUser: msg.toId,
-                    createdAt: new Date()
+                    createdAt: new Date(),
                 };
                 recipient.send(JSON.stringify(sendMsg));
                 console.log("Message sent to user", sendMsg);

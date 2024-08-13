@@ -20,6 +20,29 @@ export type chatsType  = {
     profile : String,
 }
 
+export type grpmessageType = {
+    id : String,
+    message : String,
+    createdAt : Date,
+    group_id : String,
+}
+
+
+export type groupchatsType = {
+    id : String,
+    createdAt : Date,
+    updatedAt : Date,
+    group_message : grpmessageType[],
+    name : String,
+    profile : String,
+    users : String[],
+}
+
+export const groupChat = atom({
+    key : "groupChat",
+    default : [] as groupchatsType[]
+})
+
 export const messagestate = atom({
     key : "message",
     default : [] as messageType[]
@@ -30,7 +53,12 @@ export const chatstate  = atom({
     default : [] as chatsType[]
 })
 
-export const ChatDetails = atom({
+export const ChatDetails = atom<chatsType | null>({
     key : "chatdetails",
     default : {} as chatsType
+})
+
+export const GroupChatDetails = atom<groupchatsType | null>({
+    key : "groupchatdetails",
+    default : {} as groupchatsType
 })

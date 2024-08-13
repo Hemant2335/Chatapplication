@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { FiPlusCircle, FiSend } from "react-icons/fi";
-import { ChatDetails, chatstate, messageType, chatsType } from "../store/atoms/Chat";
+import { ChatDetails, chatstate, messageType, chatsType , GroupChatDetails } from "../store/atoms/Chat";
 import { userState } from "../store/atoms/User";
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { fetchChat, fetchMsg } from "../pages/Chat";
@@ -23,6 +23,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   const [inputMsg, setInputMsg] = useState("");
   const user = useRecoilValue(userState);
   const [chatDetails, setChatDetails] = useRecoilState(ChatDetails);
+  const [groupChatDetails , setGroupChatDetails] = useRecoilState(GroupChatDetails);
   const [chat, setChat] = useRecoilState(chatstate);
 
   const chatContainerRef = useRef<HTMLDivElement>(null); // Reference for the chat container
@@ -36,7 +37,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
       message: inputMsg,
       chatId: user.ChatId,
       fromId: user.id,
-      toId: chatDetails.userID,
+      toId: chatDetails?.userID as string,
     };
 
     const newMsg: messageType = {
@@ -49,8 +50,8 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
 
     // Update local state for chat details
     setChatDetails((prevDetails) => ({
-      ...prevDetails,
-      send_message: [...(prevDetails.send_message || []), newMsg],
+      ...prevDetails!,
+      send_message: [...(prevDetails?.send_message || []), newMsg],
     }));
 
     // Update the main chat list
@@ -103,10 +104,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
         };
 
         // If the message is from the current chat, update chatDetails
-        if (chatDetails.userID === data.fromUser) {
-          setChatDetails((prevDetails) => ({
-            ...prevDetails,
-            recived_message: [...(prevDetails.recived_message || []), newMsg],
+        if (chatDetails?.userID === data.fromUser) {
+          setChatDetails((prevDetails: chatsType | null) => ({
+            ...prevDetails!,
+            recived_message: [...(prevDetails?.recived_message || []), newMsg],
           }));
         }
 
@@ -122,7 +123,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
         handleUpdateChatWithMessage(data.chatId);
       }
     };
-  }, [Socket, chatDetails.userID]);
+  }, [Socket, chatDetails?.userID]);
 
   // Scroll to bottom when chatDetails are updated
   useEffect(() => {
@@ -134,7 +135,26 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   return (
     <div className="w-full h-screen py-4 pl-2 pr-4 items-center justify-center">
       {!chatDetails ? (
-        <div>No Chat</div>
+        // 
+        <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2" >
+           <ChatScreenTopBar />
+           <div className="justify-between mx-[3vw] pr-[2vw] pl-[1vw] rounded-md text-gray-400 bg-[#1A1A1A] hidden md:flex items-center">
+            <div className="flex items-center gap-1">
+              <FiPlusCircle />
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="bg-[#1A1A1A] p-[1.5vh] focus:outline-none text-sm text-gray-300 w-full"
+                onChange={(e) => setInputMsg(e.target.value)}
+                value={inputMsg}
+              />
+            </div>
+            <FiSend
+              className="text-[#5865F2] cursor-pointer"
+              onClick={handleSendMessage}
+            />
+          </div>
+        </div>
       ) : (
         <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2">
           <ChatScreenTopBar />
