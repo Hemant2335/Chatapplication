@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { FiPlusCircle, FiSend } from "react-icons/fi";
-import { ChatDetails, chatstate, messageType, chatsType , GroupChatDetails } from "../store/atoms/Chat";
+import {
+  ChatDetails,
+  chatstate,
+  messageType,
+  chatsType,
+  GroupChatDetails,
+  groupChat,
+  grpmessageType
+} from "../store/atoms/Chat";
 import { userState } from "../store/atoms/User";
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { fetchChat, fetchMsg } from "../pages/Chat";
@@ -12,7 +20,7 @@ type SendMsg = {
   message: string;
   chatId: string;
   fromId: string;
-  toId: String;
+  toId: string;
 };
 
 type ChatScreenProps = {
@@ -23,7 +31,8 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   const [inputMsg, setInputMsg] = useState("");
   const user = useRecoilValue(userState);
   const [chatDetails, setChatDetails] = useRecoilState(ChatDetails);
-  const [groupChatDetails , setGroupChatDetails] = useRecoilState(GroupChatDetails);
+  const [groupChatDetails, setGroupChatDetails] = useRecoilState(GroupChatDetails);
+  const [GroupChat, setGroupChat] = useRecoilState(groupChat);
   const [chat, setChat] = useRecoilState(chatstate);
 
   const chatContainerRef = useRef<HTMLDivElement>(null); // Reference for the chat container
@@ -67,6 +76,47 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     setInputMsg(""); // Clear input
   };
 
+  const handleSendGroupMessage = () => {
+    if (!inputMsg.trim()) return;
+
+    const msg = {
+      token: localStorage.getItem("token") || "",
+      fromId: user.id,
+      groupId: groupChatDetails?.id,
+      content: inputMsg,
+      type: "group",
+    };
+
+    const newMsg: grpmessageType = {
+      id: crypto.randomUUID(),
+      message: msg.content,
+      fromUser: msg.fromId,
+      createdAt: new Date(),
+      GroupChatId: msg.groupId as string,
+    };
+
+    // Update local state for group chat details
+    setGroupChatDetails((prevDetails) => ({
+      ...prevDetails!,
+      group_message: [...(prevDetails?.group_message || []), newMsg],
+    }));
+
+    // Update the main group chat list
+    setGroupChat((prevGroupChat) =>
+      prevGroupChat.map((item) =>
+        item.id === msg.groupId
+          ? {
+              ...item,
+              group_message: [...(item.group_message || []), newMsg],
+            }
+          : item
+      )
+    );
+
+    Socket.send(JSON.stringify(msg));
+    setInputMsg(""); // Clear input
+  };
+
   const handleUpdateChatWithMessage = async (chatId: string) => {
     const updatedChat = await fetchChat();
     const chatWithMessages = updatedChat.map((item: chatsType) => {
@@ -93,6 +143,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   useEffect(() => {
     Socket.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
+      console.log(data);
 
       if (data.type === "private") {
         const newMsg: messageType = {
@@ -115,30 +166,89 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
         setChat((prevChat) =>
           prevChat.map((item) =>
             item.userID === data.fromUser
-              ? { ...item, send_message: [...(item.send_message || []), newMsg] }
+              ? {
+                  ...item,
+                  send_message: [...(item.send_message || []), newMsg],
+                }
               : item
           )
         );
       } else if (data.type === "chatId") {
         handleUpdateChatWithMessage(data.chatId);
+      } else if (data.type === "group") {
+        const newMsg: grpmessageType = {
+          id: data.id,
+          message: data.content,
+          fromUser: data.from,
+          createdAt: new Date(data.createdAt),
+          GroupChatId: data.groupId,
+        };
+
+        // Update group chat details if the message belongs to the current group
+        if (groupChatDetails?.id === data.groupId) {
+          setGroupChatDetails((prevDetails) => ({
+            ...prevDetails!,
+            group_message: [...(prevDetails?.group_message || []), newMsg],
+          }));
+        }
+
+        // Update the main group chat list
+        setGroupChat((prevGroupChat) =>
+          prevGroupChat.map((item) =>
+            item.id === data.groupId
+              ? {
+                  ...item,
+                  group_message: [...(item.group_message || []), newMsg],
+                }
+              : item
+          )
+        );
       }
     };
-  }, [Socket, chatDetails?.userID]);
+  }, [Socket, chatDetails?.userID, groupChatDetails?.id]);
 
-  // Scroll to bottom when chatDetails are updated
+  // Scroll to bottom when chatDetails or groupChatDetails are updated
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
     }
-  }, [chatDetails]);
+  }, [chatDetails, groupChatDetails]);
 
   return (
     <div className="w-full h-screen py-4 pl-2 pr-4 items-center justify-center">
       {!chatDetails ? (
-        // 
-        <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2" >
-           <ChatScreenTopBar />
-           <div className="justify-between mx-[3vw] pr-[2vw] pl-[1vw] rounded-md text-gray-400 bg-[#1A1A1A] hidden md:flex items-center">
+        <div className="bg-[#222222] rounded-md w-full h-full flex flex-col gap-2">
+          <ChatScreenTopBar />
+
+          {/* Messages of Group */}
+          <div className="w-full px-[5vw] flex overflow-y-scroll no-scrollbar flex-col h-[75vh] bg-[#222222] p-4" ref={chatContainerRef}>
+            {groupChatDetails?.group_message.map((item: grpmessageType) => (
+              <div
+                // key={item.id}
+                className={`${
+                  item.fromUser === user.id
+                    ? "self-end bg-[#1a1a1a]"
+                    : "self-start bg-gray-800"
+                } text-white p-2 rounded-lg max-w-xs my-2`}
+              >
+                <div>
+                  <h1 className="text-red-400">
+                    {groupChatDetails.users.map((Otheruser: any) => {
+                      if (Otheruser.id === item.fromUser) {
+                        if (Otheruser.id === user.id) return "You";
+                        return Otheruser.username;
+                      }
+                      return null;
+                    })}
+                  </h1>
+                  <p>{item.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="justify-between mx-[3vw] pr-[2vw] pl-[1vw] rounded-md text-gray-400 bg-[#1A1A1A] hidden md:flex items-center">
             <div className="flex items-center gap-1">
               <FiPlusCircle />
               <input
@@ -151,7 +261,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
             </div>
             <FiSend
               className="text-[#5865F2] cursor-pointer"
-              onClick={handleSendMessage}
+              onClick={handleSendGroupMessage}
             />
           </div>
         </div>
@@ -162,8 +272,15 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
             ref={chatContainerRef} // Attach the reference
             className="w-full px-[5vw] flex overflow-y-scroll no-scrollbar flex-col h-[75vh] bg-[#222222] p-4"
           >
-            {[...(chatDetails.send_message || []), ...(chatDetails.recived_message || [])]
-              .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+            {[
+              ...(chatDetails.send_message || []),
+              ...(chatDetails.recived_message || []),
+            ]
+              .sort(
+                (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+              )
               .map((item: messageType) => (
                 <div
                   // key={item.id}

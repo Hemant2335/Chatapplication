@@ -18,15 +18,40 @@ const wss = new ws_1.WebSocketServer({ port: 8080 });
 // Map to store clients and groups
 const clients = new Map();
 const groups = new Map();
-const handleCreateUser = (Id, client) => {
+const handleCreateUser = (Id, client) => __awaiter(void 0, void 0, void 0, function* () {
+    // Add client to the clients map
     clients.set(Id, client);
-    console.log("User Created with Id", Id);
-};
+    try {
+        // Fetch groups that the user is part of
+        const usersGroups = yield handlegetGroupUsers(Id);
+        console.log(usersGroups);
+        // Iterate over each group the user belongs to
+        usersGroups.forEach((item) => {
+            if (groups.has(item.id)) {
+                const groupClients = groups.get(item.id);
+                if (groupClients === null || groupClients === void 0 ? void 0 : groupClients.has(Id)) {
+                    return; // Client is already part of the group, no need to add
+                }
+                groupClients === null || groupClients === void 0 ? void 0 : groupClients.add(Id);
+            }
+            else {
+                // Create a new group and add the client
+                groups.set(item.id, new Set([Id]));
+            }
+        });
+        console.log("Groups:", groups);
+        console.log("User Created with Id", Id);
+    }
+    catch (error) {
+        console.error("Error in handleCreateUser:", error);
+    }
+});
 wss.on("connection", (ws) => {
     ws.send(JSON.stringify({ type: "id", id: ws.id }));
     ws.on("message", (message) => {
         try {
             const msg = JSON.parse(message.toString());
+            console.log("Received message:", msg);
             switch (msg.type) {
                 case "private":
                     handlePrivateMessage(ws, msg);
@@ -55,7 +80,6 @@ wss.on("connection", (ws) => {
 function handleUpdateDatabase(data) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            console.log(data);
             const res = yield axios_1.default.post("http://localhost:3000/api/chat/sendmessage", {
                 token: data.token,
                 toid: data.toId,
@@ -74,9 +98,22 @@ function handleUpdateDatabase(data) {
         }
     });
 }
+const handleUpdateGroupDatabase = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const res = yield axios_1.default.post("http://localhost:3000/api/chat/sendMessagesGroup", {
+            token: data.token,
+            groupid: data.groupId,
+            message: data.content,
+        });
+        const newdata = res.data;
+        return;
+    }
+    catch (error) {
+        console.log("Cannot able to update group message");
+    }
+});
 function handlePrivateMessage(sender, msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        console.log(msg);
         if (msg.toId && clients.has(msg.toId)) {
             const recipient = clients.get(msg.toId);
             if (recipient) {
@@ -102,34 +139,53 @@ function handlePrivateMessage(sender, msg) {
         }
     });
 }
+const handlegetGroupUsers = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const res = yield axios_1.default.post("http://localhost:3000/api/chat/getusersgroup", {
+            id: id,
+        });
+        return res.data.groups;
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
 function handleGroupMessage(sender, msg) {
-    if (msg.groupId && groups.has(msg.groupId)) {
-        const group = groups.get(msg.groupId);
-        if (group) {
-            group.forEach((client) => {
-                if (client !== sender) {
-                    client.send(JSON.stringify({
-                        type: "group",
-                        from: sender.id,
-                        groupId: msg.groupId,
-                        content: msg.content,
-                    }));
-                }
-            });
+    return __awaiter(this, void 0, void 0, function* () {
+        console.log("Mai run ", msg);
+        if (msg.groupId) {
+            console.log(groups, msg.groupId);
+            const group = groups.get(msg.groupId);
+            console.log("The Group ", group);
+            if (group) {
+                group.forEach((Id) => {
+                    const client = clients.get(Id);
+                    if (!client) {
+                        console.log("User not found");
+                        return;
+                    }
+                    if (client !== sender) {
+                        client.send(JSON.stringify({
+                            type: "group",
+                            from: msg.fromId,
+                            groupId: msg.groupId,
+                            content: msg.content,
+                        }));
+                        console.log("Message sent to group", JSON.stringify({
+                            type: "group",
+                            from: msg.fromId,
+                            groupId: msg.groupId,
+                            content: msg.content,
+                        }));
+                    }
+                });
+            }
+            // Update the database
+            const data = yield handleUpdateGroupDatabase(msg);
         }
-    }
-    else {
-        console.error("Group not found");
-    }
-}
-// Function to create a new group and add clients to it
-function createGroup(groupId, clientIds) {
-    const group = new Set();
-    clientIds.forEach((clientId) => {
-        if (clients.has(clientId)) {
-            group.add(clients.get(clientId));
+        else {
+            console.error("Group not found");
         }
     });
-    groups.set(groupId, group);
 }
 console.log("WebSocket server is running on ws://localhost:8080");

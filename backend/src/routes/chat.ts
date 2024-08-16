@@ -85,6 +85,69 @@ router.post("/sendmessage", async (req, res) => {
   }
 });
 
+router.post("/sendMessagesGroup", async (req, res) => {
+  const { token, groupid, message } = req.body;
+  console.log(req.body);
+  let fromid;
+  if (!token) {
+    return res.status(401).json({ Status: false, error: "No Token Provided" });
+  }
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    req.body.user = user;
+    fromid = (user as any).id;
+  } catch (error) {
+    console.log(error);
+    return res.status(401).json({ Status: false, error: "Unauthorized" });
+  }
+
+  try {
+    //Save message in database
+    await prisma.groupMessages.create({
+      data: {
+        GroupChatId: groupid,
+        fromUser: fromid,
+        message: message,
+      },
+    });
+    res.json({
+      Status: true,
+      message: "Message Saved Successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.json({ Status: false, error: "Internal Server Error" });
+  }
+});
+
+router.get("/getgroupmessages", authentication, async (req, res) => {
+  const { id } = req.body.user;
+  try {
+    // Finding the groupIds
+    const groups = await prisma.groupChat.findMany({
+      where: {
+        users: {
+          some: {
+            id: id,
+          },
+        },
+      },
+    });
+
+    const messages = await prisma.groupMessages.findMany({
+      where: {
+        GroupChatId: {
+          in: groups.map((group) => group.id),
+        },
+      },
+    });
+    return res.json({ Status: true, messages: messages });
+  } catch (error) {
+    console.log(error);
+    return res.json({ Status: false, error: "Internal Server Error" });
+  }
+});
+
 router.get("/getmessages", authentication, async (req, res) => {
   const { id } = req.body.user;
   try {
@@ -150,7 +213,8 @@ router.post("/creategroup", authentication, async (req, res) => {
     const group = await prisma.groupChat.create({
       data: {
         name: name,
-        profile: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxlT_-PpQJbt3DsWOZDQYohRy4YF8ck1n8PA&s",
+        profile:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxlT_-PpQJbt3DsWOZDQYohRy4YF8ck1n8PA&s",
       },
     });
     await prisma.groupChat.update({
@@ -172,12 +236,13 @@ router.post("/creategroup", authentication, async (req, res) => {
 
 router.post("/adduser", authentication, async (req, res) => {
   const { groupid, userIds } = req.body;
+  console.log;
   try {
     const group = await prisma.groupChat.update({
       where: { id: groupid },
       data: {
         users: {
-          connect: userIds.map((userId:string) => ({ id: userId })),
+          connect: userIds.map((userId: string) => ({ id: userId })),
         },
       },
     });
@@ -187,7 +252,6 @@ router.post("/adduser", authentication, async (req, res) => {
     res.status(400).json({ Status: false, error: "Internal Server Error" });
   }
 });
-
 
 // Fetch User's specific Group
 
@@ -202,17 +266,17 @@ router.get("/getgroup", authentication, async (req, res) => {
           },
         },
       },
-      include : {
-        users : {
-          select : {
-            id : true,
-            name : true,
-            username : true,
-            profile : true,
-            GroupChats : true
-          }
-        }
-      }
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            profile: true,
+            GroupChats: true,
+          },
+        },
+      },
     });
     res.json({ Status: true, groups: groups });
   } catch (error) {
@@ -221,12 +285,37 @@ router.get("/getgroup", authentication, async (req, res) => {
   }
 });
 
+// Fetch Users based on GroupId
 
-// Find Group Users
-
-router.post("/findgroupusers", authentication, async (req, res) => {
-
-
+router.post("/getusersgroup", async (req, res) => {
+  const { id } = req.body;
+  console.log(id , "Users");
+  try {
+    const groups = await prisma.groupChat.findMany({
+      where: {
+        users: {
+          some: {
+            id: id,
+          },
+        },
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            profile: true,
+            GroupChats: true,
+          },
+        },
+      },
+    });
+    res.json({ Status: true, groups: groups });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
 });
 
 module.exports = router;

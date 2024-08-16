@@ -33,6 +33,7 @@ const ChatScreenTopBar = () => {
                 @{chatdetails.username}
               </p>
             )}
+            <div className="flex gap-1">
             {groupChatDetails != null &&
               groupChatDetails.users &&
               groupChatDetails.users.map((user: any) => (
@@ -40,9 +41,10 @@ const ChatScreenTopBar = () => {
                   key={user.id}
                   className="text-[1.7vh] font-medium text-gray-500"
                 >
-                  @{user.username}
+                  @{user.username}, 
                 </p>
               ))}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-[1vw] text-[3vh]">

@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { IsAddUserGroupPopupAtom } from "../../store/atoms/CompState";
 import { useRecoilState } from "recoil";
+import { userState } from "../../store/atoms/User";
+import { GroupChatDetails } from "../../store/atoms/Chat";
 
 const AddUserGroup = () => {
   const [users, setUsers] = useState([]);
   const [checkedUsers, setCheckedUsers] = useState([]);
-  const [IsAddUserGroupPopup, setIsAddUserGroupPopup] = useRecoilState(IsAddUserGroupPopupAtom)
+  const [IsAddUserGroupPopup, setIsAddUserGroupPopup] = useRecoilState(IsAddUserGroupPopupAtom);
+  const [user, setUser] = useRecoilState(userState);
+  const [groupChatDetails, setGroupChatDetails] = useRecoilState(GroupChatDetails);
 
   const fetchRecommendedUsers = async () => {
     try {
@@ -23,7 +27,8 @@ const AddUserGroup = () => {
       }
 
       const data = await res.json();
-      setUsers(data.users || []);
+      // Remove the current user from the list
+      setUsers(data.users.filter((u:any) => u.id !== user.id) || []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
     }
@@ -45,7 +50,26 @@ const AddUserGroup = () => {
 
   const handleAddUsers = async() =>{
     console.log("Checked Users", checkedUsers);
-    setIsAddUserGroupPopup(false);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chat/adduser`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "authorization": localStorage.getItem("token") || "",
+        },
+        credentials: "include",
+        body: JSON.stringify({ groupid: groupChatDetails?.id, userIds: checkedUsers.map((user:any) => user.id) }),
+      });
+      const data = await res.json();
+      if(data.Status){
+        setIsAddUserGroupPopup(false);
+      }else{
+        console.log("Failed to add users");
+      }
+
+    } catch (error) {
+      console.error("Failed to add users:", error);
+    }
   }
 
   return (

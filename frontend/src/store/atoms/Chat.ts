@@ -24,7 +24,8 @@ export type grpmessageType = {
     id : String,
     message : String,
     createdAt : Date,
-    group_id : String,
+    GroupChatId: String,
+    fromUser : String,
 }
 
 

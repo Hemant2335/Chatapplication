@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useRecoilValue, useSetRecoilState , useRecoilState} from "recoil";
-import { chatstate } from "../store/atoms/Chat";
+import { useRecoilValue, useSetRecoilState, useRecoilState } from "recoil";
+import { chatstate, groupchatsType, grpmessageType } from "../store/atoms/Chat";
 import { useFetchuser } from "../hooks/useFetchuser";
 import { userState } from "../store/atoms/User";
 import Logo from "../assets/Logo.png";
@@ -17,6 +17,32 @@ type User = {
   name: string;
   profile: string;
   ChatId: String;
+};
+
+export const fetchGroupMsg = async () => {
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/api/chat/getgroupmessages`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: localStorage.getItem("token") || "",
+        },
+        credentials: "include",
+      }
+    );
+
+    const data = await res.json();
+    if (!data.Status) {
+      alert(data.error);
+      return;
+    }
+    console.log("Fetched new Group Messages", data.messages);
+    return data.messages;
+  } catch (error) {
+    return console.log(error);
+  }
 };
 
 const SideMsgBar = () => {
@@ -65,8 +91,32 @@ const SideMsgBar = () => {
       if (!data.Status) {
         alert(data.error);
       }
+
       console.log("Fetched new Group", data);
-      setGroupChat(data.groups);
+      let chat = data.groups;
+      console.log("Group Chat", chat);
+      const newGrpchat = chat.map((item: groupchatsType) => {
+        const newItem = { ...item };
+        newItem.group_message = [];
+        return newItem;
+      });
+      const fetchmsg = await fetchGroupMsg();
+      console.log(fetchmsg ,'nk messge' , newGrpchat);
+      if (fetchmsg) {
+        fetchmsg.map((msg:any) => {
+          newGrpchat.map((item: groupchatsType) => {
+            if (msg.GroupChatId === item.id) {
+              if (item.group_message === undefined) {
+                item.group_message = [];
+                item.group_message.push(msg);
+              } else {
+                item.group_message.push(msg);
+              }
+            }
+          });
+        });
+      }
+      setGroupChat(newGrpchat);
     } catch (error) {
       console.log(error);
     }
@@ -115,25 +165,37 @@ const SideMsgBar = () => {
         />
       </div>
       <div className="w-full h-[5vh] flex justify-between items-center px-4 mt-[2vh]">
-        <div onClick={()=>{setIsUserChats(true)}} className="bg-[#222222] w-full cursor-pointer mx-2 py-3 px-2 font-bold text-sm rounded-md shadow-2xl">
+        <div
+          onClick={() => {
+            setIsUserChats(true);
+          }}
+          className="bg-[#222222] w-full cursor-pointer mx-2 py-3 px-2 font-bold text-sm rounded-md shadow-2xl"
+        >
           Chat
         </div>
-        <div onClick={()=>{setIsUserChats(false)}} className="bg-[#222222] cursor-pointer w-full mx-2 py-3 px-2 font-bold  text-sm rounded-md shadow-2xl">
+        <div
+          onClick={() => {
+            setIsUserChats(false);
+          }}
+          className="bg-[#222222] cursor-pointer w-full mx-2 py-3 px-2 font-bold  text-sm rounded-md shadow-2xl"
+        >
           Group Chat
         </div>
       </div>
-      {IsUserChats ? (<div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
-        {Users.map((item) => (
-          <SideUserComp key={item.username} user={item} />
-        ))}
-      </div>)  : (
+      {IsUserChats ? (
+        <div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
+          {Users.map((item) => (
+            <SideUserComp key={item.username} user={item} />
+          ))}
+        </div>
+      ) : (
         <div className="mt-[4vh] flex flex-col gap-3 overflow-y-scroll h-[65vh]">
           {GroupChat?.map((item) => (
-          <SideGroupComp key={item.id} group = {item} />
-        ))}
+            <SideGroupComp key={item.id} group={item} />
+          ))}
         </div>
       )}
-      
+
       <div className="absolute w-full bottom-[2vh] pr-[2vw]">
         <hr className=" border-1 border-gray-500 " />
         <div className="flex items-center rounded-lg justify-between  p-3">

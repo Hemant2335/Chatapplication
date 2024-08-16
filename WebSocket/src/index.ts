@@ -8,11 +8,36 @@ const wss = new WebSocketServer({ port: 8080 });
 
 // Map to store clients and groups
 const clients = new Map<string, Client>();
-const groups = new Map<string, Set<Client>>();
+const groups = new Map<string, Set<string>>();
 
-const handleCreateUser = (Id: string, client: Client) => {
+const handleCreateUser = async (Id: string, client: Client) => {
+  // Add client to the clients map
   clients.set(Id, client);
-  console.log("User Created with Id", Id);
+
+  try {
+    // Fetch groups that the user is part of
+    const usersGroups = await handlegetGroupUsers(Id);
+    console.log(usersGroups);
+
+    // Iterate over each group the user belongs to
+    usersGroups.forEach((item: any) => {
+      if (groups.has(item.id)) {
+        const groupClients = groups.get(item.id);
+        if (groupClients?.has(Id)) {
+          return; // Client is already part of the group, no need to add
+        }
+        groupClients?.add(Id);
+      } else {
+        // Create a new group and add the client
+        groups.set(item.id, new Set([Id]));
+      }
+    });
+
+    console.log("Groups:", groups);
+    console.log("User Created with Id", Id);
+  } catch (error) {
+    console.error("Error in handleCreateUser:", error);
+  }
 };
 
 wss.on("connection", (ws: Client) => {
@@ -20,7 +45,7 @@ wss.on("connection", (ws: Client) => {
   ws.on("message", (message: string) => {
     try {
       const msg = JSON.parse(message.toString());
-
+      console.log("Received message:", msg);
       switch (msg.type) {
         case "private":
           handlePrivateMessage(ws, msg);
@@ -49,7 +74,6 @@ wss.on("connection", (ws: Client) => {
 
 async function handleUpdateDatabase(data: any) {
   try {
-    console.log(data);
     const res = await axios.post("http://localhost:3000/api/chat/sendmessage", {
       token: data.token,
       toid: data.toId,
@@ -67,6 +91,23 @@ async function handleUpdateDatabase(data: any) {
   }
 }
 
+const handleUpdateGroupDatabase = async (data: any) => {
+  try {
+    const res = await axios.post(
+      "http://localhost:3000/api/chat/sendMessagesGroup",
+      {
+        token: data.token,
+        groupid: data.groupId,
+        message: data.content,
+      }
+    );
+    const newdata = res.data;
+    return;
+  } catch (error) {
+    console.log("Cannot able to update group message");
+  }
+};
+
 type message = {
   id?: String;
   type: String;
@@ -77,7 +118,6 @@ type message = {
 };
 
 async function handlePrivateMessage(sender: Client, msg: any) {
-  console.log(msg);
   if (msg.toId && clients.has(msg.toId)) {
     const recipient = clients.get(msg.toId);
     if (recipient) {
@@ -104,16 +144,47 @@ async function handlePrivateMessage(sender: Client, msg: any) {
   }
 }
 
-function handleGroupMessage(sender: Client, msg: any) {
-  if (msg.groupId && groups.has(msg.groupId)) {
+const handlegetGroupUsers = async (id: string) => {
+  try {
+    const res = await axios.post(
+      "http://localhost:3000/api/chat/getusersgroup",
+      {
+        id: id,
+      }
+    );
+    return res.data.groups;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+async function handleGroupMessage(sender: Client, msg: any) {
+  console.log("Mai run ", msg);
+  if (msg.groupId) {
+    console.log(groups, msg.groupId);
     const group = groups.get(msg.groupId);
+    console.log("The Group ", group);
     if (group) {
-      group.forEach((client) => {
+      group.forEach((Id) => {
+        const client = clients.get(Id);
+        if (!client) {
+          console.log("User not found");
+          return;
+        }
         if (client !== sender) {
           client.send(
             JSON.stringify({
               type: "group",
-              from: sender.id,
+              from: msg.fromId,
+              groupId: msg.groupId,
+              content: msg.content,
+            })
+          );
+          console.log(
+            "Message sent to group",
+            JSON.stringify({
+              type: "group",
+              from: msg.fromId,
               groupId: msg.groupId,
               content: msg.content,
             })
@@ -121,20 +192,12 @@ function handleGroupMessage(sender: Client, msg: any) {
         }
       });
     }
+    // Update the database
+
+    const data = await handleUpdateGroupDatabase(msg);
   } else {
     console.error("Group not found");
   }
-}
-
-// Function to create a new group and add clients to it
-function createGroup(groupId: string, clientIds: string[]) {
-  const group = new Set<Client>();
-  clientIds.forEach((clientId) => {
-    if (clients.has(clientId)) {
-      group.add(clients.get(clientId)!);
-    }
-  });
-  groups.set(groupId, group);
 }
 
 console.log("WebSocket server is running on ws://localhost:8080");

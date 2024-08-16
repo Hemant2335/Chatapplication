@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { userState } from "../store/atoms/User";
 import { useRecoilState, useSetRecoilState, useRecoilValue } from "recoil";
 import { useNavigate } from "react-router-dom";
-import { chatsType, messageType } from "../store/atoms/Chat";
+import { chatsType, groupChat, groupchatsType, grpmessageType, messageType } from "../store/atoms/Chat";
 import { messagestate } from "../store/atoms/Chat";
 import { chatstate } from "../store/atoms/Chat";
 import SideMsgBar from "../components/SideMsgBar";
@@ -38,6 +38,7 @@ export const fetchMsg = async () => {
   }
 };
 
+
 export const fetchChat = async () => {
   try {
     const res = await fetch(
@@ -66,6 +67,7 @@ export const fetchChat = async () => {
 const Chat = () => {
   const [chat, setchat] = useRecoilState(chatstate);
   const user = useRecoilValue(userState);
+  const [GroupChat, setGroupChat] = useRecoilState(groupChat);
   
   const newsocket = new WebSocket("ws://localhost:8080");
   const [isCreateGroupPopup, setisCreateGroupPopup] = useRecoilState(
@@ -120,6 +122,7 @@ const Chat = () => {
 
   useEffect(() => {
     handleUpdateChatwithMessage();
+    
   }, []);
 
   return (

@@ -59,6 +59,7 @@ model GroupMessages {
   id        String @id @default(cuid())
   message   String
   createdAt DateTime @default(now())
+  fromUser  String
   GroupChatId String
   groupChat GroupChat @relation(fields: [GroupChatId], references: [id])
 }
