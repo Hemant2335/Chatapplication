@@ -142,6 +142,23 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   };
 
   useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          console.log("Notification permission granted.");
+        }
+      });
+    }
+  }, []);
+  
+  const showNotification = (title:any, body:any) => {
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+    }
+  };
+
+
+  useEffect(() => {
     Socket.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
       console.log(data);
@@ -174,6 +191,11 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
               : item
           )
         );
+        if (data.fromUser !== user.id) {
+          showNotification("New Message", newMsg.message);
+        }
+
+
       } else if (data.type === "chatId") {
         handleUpdateChatWithMessage(data.chatId);
       } else if (data.type === "group") {
@@ -204,6 +226,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
               : item
           )
         );
+
+        if (data.fromUser !== user.id) {
+          showNotification("New Message", newMsg.message);
+        }
       } else if (data.type === "creategroup") {
         console.log("New Group", data);
         const newGroup = data.group;
