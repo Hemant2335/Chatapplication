@@ -4,7 +4,7 @@ import { useRecoilState } from "recoil";
 import { userState } from "../../store/atoms/User";
 import { GroupChatDetails } from "../../store/atoms/Chat";
 
-const AddUserGroup = () => {
+const AddUserGroup = ({ Socket }: { Socket: WebSocket }) => {
   const [users, setUsers] = useState([]);
   const [checkedUsers, setCheckedUsers] = useState([]);
   const [IsAddUserGroupPopup, setIsAddUserGroupPopup] = useRecoilState(IsAddUserGroupPopupAtom);
@@ -63,6 +63,20 @@ const AddUserGroup = () => {
       const data = await res.json();
       if(data.Status){
         setIsAddUserGroupPopup(false);
+        // Add these users to local group chatdetails
+        setGroupChatDetails((prev:any) => {
+          return {
+            ...prev,
+            users: [...prev.users, ...checkedUsers],
+          };
+        });
+        // Message to Websocket to let other user knew about new group creation
+        const msg = {
+          type : "creategroup",
+          group : groupChatDetails,
+          users : [...checkedUsers , user]
+        }
+        Socket.send(JSON.stringify(msg));
       }else{
         console.log("Failed to add users");
       }

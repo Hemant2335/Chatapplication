@@ -128,8 +128,8 @@ const Chat = () => {
   return (
     <div className="w-full h-screen flex">
       <SideMsgBar />
-      {isCreateGroupPopup && <CreateGroup/>}
-      {IsAddUserGroupPopup && <AddUserGroup />}
+      {isCreateGroupPopup && <CreateGroup Socket = {newsocket}/>}
+      {IsAddUserGroupPopup && <AddUserGroup Socket = {newsocket}/>}
       <ChatScreen Socket={newsocket} />
     </div>
   );

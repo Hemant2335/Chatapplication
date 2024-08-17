@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { IsCreateGroupPopupAtom } from "../../store/atoms/CompState";
-import { useSetRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { groupChat } from "../../store/atoms/Chat";
+import { userState } from "../../store/atoms/User";
 
-const CreateGroup = () => {
+const CreateGroup = ({ Socket }: { Socket: WebSocket }) => {
   const [GroupName, setGroupName] = useState("");
     const SetIsCreateGroupPopup = useSetRecoilState(IsCreateGroupPopupAtom);
+    const [GroupChat, setGroupChat] = useRecoilState(groupChat);
+    const user = useRecoilValue(userState);
   const handleCreateGroup = async () => {
     if (!GroupName.trim()) return;
     console.log("Group Name", GroupName);
@@ -28,6 +32,10 @@ const CreateGroup = () => {
             return;
         }
         console.log("Group Created", data);
+        const newgroup = data.group;
+        newgroup.group_message = [];
+        newgroup.users = [user]
+        setGroupChat((prev) => [...prev, newgroup]);
         SetIsCreateGroupPopup(false);
     } catch (error) {
         return console.log(error);

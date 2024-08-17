@@ -40,6 +40,26 @@ const handleCreateUser = async (Id: string, client: Client) => {
   }
 };
 
+
+const handleCreateGroup = (msg: any) => {
+  // Add group to the groups map
+  console.log("Group Created", msg);
+  groups.set(msg.group.id, new Set(msg.users));
+
+  // Add users to group
+  const newgroup = msg.group;
+  newgroup.users = msg.users;
+  // Now send the group to all the users in the group
+  msg.users.forEach((user: any) => {
+    const client = clients.get(user.id);
+    if (client) {
+      client.send(JSON.stringify({ type: "creategroup", group : newgroup }));
+      console.log("Message sent to user", user.name);
+    }
+  });
+}
+
+
 wss.on("connection", (ws: Client) => {
   ws.send(JSON.stringify({ type: "id", id: ws.id }));
   ws.on("message", (message: string) => {
@@ -52,6 +72,9 @@ wss.on("connection", (ws: Client) => {
           break;
         case "createUser":
           handleCreateUser(msg.id, ws);
+          break;
+        case "creategroup":
+          handleCreateGroup(msg );
           break;
         case "group":
           handleGroupMessage(ws, msg);

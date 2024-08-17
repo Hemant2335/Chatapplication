@@ -101,9 +101,9 @@ const SideMsgBar = () => {
         return newItem;
       });
       const fetchmsg = await fetchGroupMsg();
-      console.log(fetchmsg ,'nk messge' , newGrpchat);
+      console.log(fetchmsg, "nk messge", newGrpchat);
       if (fetchmsg) {
-        fetchmsg.map((msg:any) => {
+        fetchmsg.map((msg: any) => {
           newGrpchat.map((item: groupchatsType) => {
             if (msg.GroupChatId === item.id) {
               if (item.group_message === undefined) {

@@ -8,7 +8,7 @@ import {
   chatsType,
   GroupChatDetails,
   groupChat,
-  grpmessageType
+  grpmessageType,
 } from "../store/atoms/Chat";
 import { userState } from "../store/atoms/User";
 import ChatScreenTopBar from "./ChatScreenTopBar";
@@ -31,7 +31,8 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
   const [inputMsg, setInputMsg] = useState("");
   const user = useRecoilValue(userState);
   const [chatDetails, setChatDetails] = useRecoilState(ChatDetails);
-  const [groupChatDetails, setGroupChatDetails] = useRecoilState(GroupChatDetails);
+  const [groupChatDetails, setGroupChatDetails] =
+    useRecoilState(GroupChatDetails);
   const [GroupChat, setGroupChat] = useRecoilState(groupChat);
   const [chat, setChat] = useRecoilState(chatstate);
 
@@ -203,6 +204,15 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
               : item
           )
         );
+      } else if (data.type === "creategroup") {
+        console.log("New Group", data);
+        const newGroup = data.group;
+        // Check if the group already exists
+        const existingGroup = GroupChat.find((item) => item.id === newGroup.id);
+        if (!existingGroup) {
+          const newGrpchat = [...GroupChat, newGroup];
+          setGroupChat(newGrpchat);
+        }
       }
     };
   }, [Socket, chatDetails?.userID, groupChatDetails?.id]);
@@ -222,7 +232,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           <ChatScreenTopBar />
 
           {/* Messages of Group */}
-          <div className="w-full px-[5vw] flex overflow-y-scroll no-scrollbar flex-col h-[75vh] bg-[#222222] p-4" ref={chatContainerRef}>
+          <div
+            className="w-full px-[5vw] flex overflow-y-scroll no-scrollbar flex-col h-[75vh] bg-[#222222] p-4"
+            ref={chatContainerRef}
+          >
             {groupChatDetails?.group_message.map((item: grpmessageType) => (
               <div
                 // key={item.id}
