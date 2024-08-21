@@ -95,7 +95,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     };
 
     const newMsg: grpmessageType = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       message: msg.content,
       fromUser: msg.fromId,
       createdAt: new Date(),
