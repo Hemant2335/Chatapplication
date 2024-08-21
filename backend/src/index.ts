@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
   credentials: true,
-  origin: ["https://onechatfrontend.vercel.app", "http://localhost:5173"]
+  origin: ["https://onechatfrontend.vercel.app", "http://localhost:5173" ,"http://13.60.184.6:3000"]
 }));
 
 app.get('/', (req, res) => {
