@@ -196,7 +196,7 @@ const SideMsgBar = () => {
         </div>
       )}
 
-      <div className="absolute w-full bottom-[2vh] pr-[2vw]">
+      <div className="absolute w-full bottom-[2vh] bg-[#222222] pr-[2vw]">
         <hr className=" border-1 border-gray-500 " />
         <div className="flex items-center rounded-lg justify-between  p-3">
           <div className="flex gap-2 items-center">

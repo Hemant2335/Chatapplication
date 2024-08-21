@@ -56,6 +56,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
       fromUser: msg.fromId,
       toUser: msg.toId,
       createdAt: new Date(),
+      isRead : false
     };
 
     // Update local state for chat details
@@ -170,6 +171,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           fromUser: data.fromUser,
           toUser: data.toUser,
           createdAt: new Date(data.createdAt),
+          isRead : false
         };
 
         // If the message is from the current chat, update chatDetails
