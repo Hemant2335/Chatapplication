@@ -13,6 +13,7 @@ import {
 import { userState } from "../store/atoms/User";
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { fetchChat, fetchMsg } from "../pages/Chat";
+import { v4 as uuidv4 } from 'uuid';
 
 type SendMsg = {
   token: string;
@@ -38,6 +39,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
 
   const chatContainerRef = useRef<HTMLDivElement>(null); // Reference for the chat container
 
+
+  function generateUUID() {
+    return uuidv4();
+  }
   const handleSendMessage = () => {
     if (!inputMsg.trim()) return;
 
@@ -51,7 +56,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     };
 
     const newMsg: messageType = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       message: msg.message,
       fromUser: msg.fromId,
       toUser: msg.toId,
