@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { FiPlusCircle, FiSend } from "react-icons/fi";
+import { BiCheck, BiCheckDouble } from "react-icons/bi";
 import {
   ChatDetails,
   chatstate,
@@ -13,9 +14,10 @@ import {
 import { userState } from "../store/atoms/User";
 import ChatScreenTopBar from "./ChatScreenTopBar";
 import { fetchChat, fetchMsg } from "../pages/Chat";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 type SendMsg = {
+  id: string;
   token: string;
   type: string;
   message: string;
@@ -39,14 +41,16 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
 
   const chatContainerRef = useRef<HTMLDivElement>(null); // Reference for the chat container
 
-
   function generateUUID() {
     return uuidv4();
   }
   const handleSendMessage = () => {
     if (!inputMsg.trim()) return;
 
+    const msgId = generateUUID();
+
     const msg: SendMsg = {
+      id: msgId,
       token: localStorage.getItem("token") || "",
       type: "private",
       message: inputMsg,
@@ -56,25 +60,28 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
     };
 
     const newMsg: messageType = {
-      id: generateUUID(),
+      id: msgId,
       message: msg.message,
       fromUser: msg.fromId,
       toUser: msg.toId,
       createdAt: new Date(),
-      isRead : false
+      Status: "sent",
     };
 
     // Update local state for chat details
     setChatDetails((prevDetails) => ({
       ...prevDetails!,
-      send_message: [...(prevDetails?.send_message || []), newMsg],
+      recived_message: [...(prevDetails?.recived_message || []), newMsg],
     }));
 
     // Update the main chat list
     setChat((prevChat) =>
       prevChat.map((item) =>
         item.userID === newMsg.toUser
-          ? { ...item, send_message: [...(item.send_message || []), newMsg] }
+          ? {
+              ...item,
+              recived_message: [...(item.recived_message || []), newMsg],
+            }
           : item
       )
     );
@@ -140,6 +147,7 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
             item.send_message.push(msg);
           } else if (msg.fromUser === user.id && msg.toUser === item.userID) {
             item.recived_message.push(msg);
+            
           }
         });
       });
@@ -149,26 +157,54 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
 
   useEffect(() => {
     if (Notification.permission === "default") {
-      Notification.requestPermission().then(permission => {
+      Notification.requestPermission().then((permission) => {
         if (permission === "granted") {
           console.log("Notification permission granted.");
         }
       });
     }
   }, []);
-  
-  const showNotification = (title:any, body:any) => {
+
+  const showNotification = (title: any, body: any) => {
     if (Notification.permission === "granted") {
       new Notification(title, { body });
     }
   };
 
+  const handleupdateMsgStatus = (chatDetails: chatsType) => {
+    const Ids: String[] = [];
+
+    chatDetails.send_message.map((msg) => {
+      if (msg.Status === "sent") {
+        Ids.push(msg.id);
+      }
+    });
+
+    if (Ids.length === 0) return;
+    console.log("Updated Message IDs:", Ids);
+    // Now send the updated message status to the websocket
+    const msg = {
+      type: "updateMsgStatus",
+      token: localStorage.getItem("token"),
+      ids: Ids,
+      toId: chatDetails.userID,
+      status: "seen",
+    };
+
+    Socket.send(JSON.stringify(msg));
+  };
+
+  // When Chat opens set the IsRead to true for all messages and send to websocket
+  useEffect(() => {
+    if (chatDetails && chatDetails.recived_message !== undefined) {
+      handleupdateMsgStatus(chatDetails);
+    }
+  }, [chatDetails?.userID]);
 
   useEffect(() => {
     Socket.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
       console.log(data);
-
       if (data.type === "private") {
         const newMsg: messageType = {
           id: data.id,
@@ -176,15 +212,28 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           fromUser: data.fromUser,
           toUser: data.toUser,
           createdAt: new Date(data.createdAt),
-          isRead : false
+          Status: "sent",
         };
 
         // If the message is from the current chat, update chatDetails
         if (chatDetails?.userID === data.fromUser) {
           setChatDetails((prevDetails: chatsType | null) => ({
             ...prevDetails!,
-            recived_message: [...(prevDetails?.recived_message || []), newMsg],
+            send_message: [...(prevDetails?.send_message || []), newMsg],
           }));
+          
+          if (chatDetails) {
+            const msg = {
+              type: "updateMsgStatus",
+              token: localStorage.getItem("token"),
+              ids: [newMsg.id],
+              toId: chatDetails.userID,
+              status: "seen",
+            };
+            
+            Socket.send(JSON.stringify(msg));
+            
+          }
         }
 
         // Update the chat list state
@@ -198,11 +247,10 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
               : item
           )
         );
+
         if (data.fromUser !== user.id) {
           showNotification("New Message", newMsg.message);
         }
-
-
       } else if (data.type === "chatId") {
         handleUpdateChatWithMessage(data.chatId);
       } else if (data.type === "group") {
@@ -246,6 +294,19 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
           const newGrpchat = [...GroupChat, newGroup];
           setGroupChat(newGrpchat);
         }
+      } else if (data.type === "updateMsgStatus") {
+        console.log("Message Status Updated", data);
+        const updatedMessages = chatDetails?.recived_message?.map((msg) => {
+          if (data.ids.includes(msg.id)) {
+            console.log(msg.id, msg.message, data.ids);
+            return { ...msg, Status: data.status };
+          }
+          return msg;
+        });
+        setChatDetails((prevDetails: any) => ({
+          ...prevDetails!,
+          recived_message: updatedMessages,
+        }));
       }
     };
   }, [Socket, chatDetails?.userID, groupChatDetails?.id]);
@@ -332,11 +393,15 @@ const ChatScreen = ({ Socket }: ChatScreenProps) => {
                   // key={item.id}
                   className={`${
                     item.fromUser === user.id
-                      ? "self-end bg-green-600"
+                      ? "self-end bg-[#1a1a1a] shadow-2xl"
                       : "self-start bg-gray-700"
                   } text-white p-2 rounded-lg max-w-xs my-2`}
                 >
-                  <p>{item.message}</p>
+                  <span className="flex relative items-center">
+                    <p className="">{item.message}</p>
+                    {item.fromUser === user.id &&
+                      (item.Status === "sent" ? <BiCheck className="text-gray-500"/> : <BiCheckDouble className="text-blue-700"/>)}
+                  </span>
                 </div>
               ))}
           </div>

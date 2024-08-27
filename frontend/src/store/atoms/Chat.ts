@@ -6,7 +6,7 @@ export type messageType = {
   createdAt :  Date,
   fromUser :  String,
   toUser   :  String ,
-  isRead  : boolean
+  Status : String
 }
 
 export type chatsType  = {

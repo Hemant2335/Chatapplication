@@ -62,6 +62,28 @@ const handleCreateGroup = (msg) => {
         }
     });
 };
+const handleUpdateMsgStatus = (data) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const res = yield axios_1.default.post("http://localhost:3000/api/chat/updatemessagestatus", {
+            token: data.token,
+            ids: data.ids,
+            status: data.status,
+        });
+        // Now sending the User that the message has been read
+        const client = clients.get(data.toId);
+        if (client) {
+            client.send(JSON.stringify({
+                type: "updateMsgStatus",
+                ids: data.ids,
+                status: data.status,
+            }));
+        }
+        console.log("Message Status Updated");
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
 wss.on("connection", (ws) => {
     ws.send(JSON.stringify({ type: "id", id: ws.id }));
     ws.on("message", (message) => {
@@ -71,6 +93,9 @@ wss.on("connection", (ws) => {
             switch (msg.type) {
                 case "private":
                     handlePrivateMessage(ws, msg);
+                    break;
+                case "updateMsgStatus":
+                    handleUpdateMsgStatus(msg);
                     break;
                 case "createUser":
                     handleCreateUser(msg.id, ws);
@@ -103,14 +128,11 @@ function handleUpdateDatabase(data) {
                 token: data.token,
                 toid: data.toId,
                 message: data.message,
+                id: data.id
             });
             const newdata = res.data;
-            console.log(newdata.chatId);
-            const retdata = {
-                Chatid: newdata.chatId,
-                newchat: newdata.newchat,
-            };
-            return retdata;
+            console.log(newdata, "Updated Message ");
+            return newdata;
         }
         catch (error) {
             console.log(error);
@@ -135,8 +157,11 @@ function handlePrivateMessage(sender, msg) {
     return __awaiter(this, void 0, void 0, function* () {
         if (msg.toId && clients.has(msg.toId)) {
             const recipient = clients.get(msg.toId);
+            const data = yield handleUpdateDatabase(msg);
+            // console.log(msg.id , data.messageId ,"sent message");
             if (recipient) {
                 const sendMsg = {
+                    id: data.messageId,
                     type: "private",
                     fromUser: msg.fromId,
                     message: msg.message,
@@ -145,7 +170,6 @@ function handlePrivateMessage(sender, msg) {
                 };
                 recipient.send(JSON.stringify(sendMsg));
                 console.log("Message sent to user", sendMsg);
-                const data = yield handleUpdateDatabase(msg);
                 // Now Creating new Chat if newchat is true and sending the chatId to the user and recipient
                 if (data && data.newchat) {
                     sender.send(JSON.stringify({ type: "chatId", chatId: data.Chatid[0] }));

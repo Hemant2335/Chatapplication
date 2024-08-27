@@ -69,7 +69,7 @@ const Chat = () => {
   const user = useRecoilValue(userState);
   const [GroupChat, setGroupChat] = useRecoilState(groupChat);
   
-  const newsocket = new WebSocket("ws://ec2-13-60-193-223.eu-north-1.compute.amazonaws.com:8080");
+  const newsocket = new WebSocket("ws://localhost:8080");
   const [isCreateGroupPopup, setisCreateGroupPopup] = useRecoilState(
     IsCreateGroupPopupAtom
   );

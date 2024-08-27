@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 require("dotenv").config();
 
 router.post("/sendmessage", async (req, res) => {
-  const { token, toid, message } = req.body;
+  const { token, toid, message , id } = req.body;
   let fromid;
   if (!token) {
     return res.status(401).json({ Status: false, error: "No Token Provided" });
@@ -32,8 +32,9 @@ router.post("/sendmessage", async (req, res) => {
     console.log("Chat already Exits", chat);
     if (chat) {
       //Save message in database
-      await prisma.messages.create({
+      const Updatedmessage = await prisma.messages.create({
         data: {
+          id : id,
           ChatId: chat.id,
           fromUser: fromid,
           toUser: toid,
@@ -46,6 +47,7 @@ router.post("/sendmessage", async (req, res) => {
         newchat: false,
         message: "Message Saved Successfully",
         chatId: chat.id,
+        messageId: Updatedmessage.id,
       });
     } else {
       //Create Chat
@@ -64,8 +66,9 @@ router.post("/sendmessage", async (req, res) => {
       });
       console.log("Created New Chat", newChat);
       //Save message in database
-      await prisma.messages.create({
+      const Updatedmessage = await prisma.messages.create({
         data: {
+          id : id,
           ChatId: newChat.id,
           fromUser: fromid,
           toUser: toid,
@@ -77,6 +80,7 @@ router.post("/sendmessage", async (req, res) => {
         newchat: true,
         message: "Message Saved Successfully",
         chatId: [newChat.id, newChat2.id],
+        messageId: Updatedmessage.id,
       });
     }
   } catch (error) {
@@ -289,7 +293,7 @@ router.get("/getgroup", authentication, async (req, res) => {
 
 router.post("/getusersgroup", async (req, res) => {
   const { id } = req.body;
-  console.log(id , "Users");
+  console.log(id, "Users");
   try {
     const groups = await prisma.groupChat.findMany({
       where: {
@@ -312,6 +316,40 @@ router.post("/getusersgroup", async (req, res) => {
       },
     });
     res.json({ Status: true, groups: groups });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ Status: false, error: "Internal Server Error" });
+  }
+});
+
+// Endpoint to update the messages status
+
+router.post("/updatemessagestatus", async (req, res) => {
+  const { ids, status, token } = req.body;
+  let Userid;
+  if (!token) {
+    return res.status(401).json({ Status: false, error: "No Token Provided" });
+  }
+  try {
+    const user = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    req.body.user = user;
+    Userid = (user as any).id;
+  } catch (error) {
+    console.log(error);
+    return res.status(401).json({ Status: false, error: "Unauthorized" });
+  }
+  console.log(ids, status, Userid);
+  try {
+    // Now update all the Messages with the given Ids
+    await Promise.all(
+      ids.map(async (id: string) => {
+        await prisma.messages.update({
+          where: { id: id},
+          data: { Status : status },
+        });
+      })
+    );    
+    res.json({ Status: true, message: "Message Status Updated Successfully" });
   } catch (error) {
     console.log(error);
     res.status(400).json({ Status: false, error: "Internal Server Error" });

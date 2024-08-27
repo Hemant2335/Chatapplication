@@ -53,7 +53,7 @@ model Messages {
   toUser    String 
   ChatId    String
   chat      Chat @relation(fields: [ChatId], references: [id])
-  isRead    Boolean @default(false)
+  Status    String @default("sent")
 }
 
 model GroupMessages {

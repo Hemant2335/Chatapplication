@@ -59,6 +59,31 @@ const handleCreateGroup = (msg: any) => {
   });
 }
 
+const handleUpdateMsgStatus = async (data: any) => {
+  try {
+    const res = await axios.post("http://localhost:3000/api/chat/updatemessagestatus", {
+      token: data.token,
+      ids: data.ids,
+      status: data.status,
+    });
+
+    // Now sending the User that the message has been read
+    const client = clients.get(data.toId);
+    if (client) {
+      client.send(
+        JSON.stringify({
+          type: "updateMsgStatus",
+          ids: data.ids,
+          status: data.status,
+        })
+      );
+    }
+    console.log("Message Status Updated");
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 
 wss.on("connection", (ws: Client) => {
   ws.send(JSON.stringify({ type: "id", id: ws.id }));
@@ -69,6 +94,9 @@ wss.on("connection", (ws: Client) => {
       switch (msg.type) {
         case "private":
           handlePrivateMessage(ws, msg);
+          break;
+        case "updateMsgStatus":
+          handleUpdateMsgStatus(msg);
           break;
         case "createUser":
           handleCreateUser(msg.id, ws);
@@ -101,14 +129,11 @@ async function handleUpdateDatabase(data: any) {
       token: data.token,
       toid: data.toId,
       message: data.message,
+      id : data.id
     });
     const newdata = res.data;
-    console.log(newdata.chatId);
-    const retdata = {
-      Chatid: newdata.chatId,
-      newchat: newdata.newchat,
-    };
-    return retdata;
+    console.log(newdata , "Updated Message ");
+    return newdata;
   } catch (error) {
     console.log(error);
   }
@@ -143,8 +168,11 @@ type message = {
 async function handlePrivateMessage(sender: Client, msg: any) {
   if (msg.toId && clients.has(msg.toId)) {
     const recipient = clients.get(msg.toId);
+    const data = await handleUpdateDatabase(msg);
+    // console.log(msg.id , data.messageId ,"sent message");
     if (recipient) {
       const sendMsg: message = {
+        id: data.messageId,
         type: "private",
         fromUser: msg.fromId,
         message: msg.message,
@@ -153,7 +181,7 @@ async function handlePrivateMessage(sender: Client, msg: any) {
       };
       recipient.send(JSON.stringify(sendMsg));
       console.log("Message sent to user", sendMsg);
-      const data = await handleUpdateDatabase(msg);
+      
       // Now Creating new Chat if newchat is true and sending the chatId to the user and recipient
       if (data && data.newchat) {
         sender.send(JSON.stringify({ type: "chatId", chatId: data.Chatid[0] }));
