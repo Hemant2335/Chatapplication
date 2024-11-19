@@ -43,7 +43,7 @@ router.post("/login", (req, res) => __awaiter(void 0, void 0, void 0, function* 
             domain: "vercel.app"
         });
         console.log("Successfully set cookie");
-        res.json({ Status: true, token: token });
+        res.json({ Status: true, token: token, user: user });
     }
     catch (error) {
         console.log(error);

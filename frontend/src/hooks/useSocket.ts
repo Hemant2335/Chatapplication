@@ -22,29 +22,29 @@ export const useSocket = (url: string) => {
         socket?.send(message);
       };
 
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log("Got message:", data);
-        if (data.ChatId) {
-          // Find Chat and Add Message
-          console.log("I am new Chat" ,data.newchat);
-          if (data.newchat === false) {
-            return setMsg((prevMsg) => [...prevMsg, data]);
-          } else {
-            // IF Chat not found then fetch the Chat
-            console.log("I am Changing the Chat");
-            const newchat = {
-              id: data.ChatId,
-              userID: data.fromUser,
-              touserID: data.toUser,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }
-            setChat((prevChat) => [...prevChat, newchat]);
-            setMsg((prevMsg) => [...prevMsg, data]);
-          }
-        }
-      };
+      // socket.onmessage = (event) => {
+      //   const data = JSON.parse(event.data);
+      //   console.log("Got message:", data);
+      //   if (data.ChatId) {
+      //     // Find Chat and Add Message
+      //     console.log("I am new Chat" ,data.newchat);
+      //     if (data.newchat === false) {
+      //       return setMsg((prevMsg) => [...prevMsg, data]);
+      //     } else {
+      //       // IF Chat not found then fetch the Chat
+      //       console.log("I am Changing the Chat");
+      //       const newchat = {
+      //         id: data.ChatId,
+      //         userID: data.fromUser,
+      //         touserID: data.toUser,
+      //         createdAt: new Date(),
+      //         updatedAt: new Date(),
+      //       }
+      //       setChat((prevChat) => [...prevChat, newchat]);
+      //       setMsg((prevMsg) => [...prevMsg, data]);
+      //     }
+      //   }
+      // };
 
       return () => {
         console.log("Cleaning up WebSocket");
